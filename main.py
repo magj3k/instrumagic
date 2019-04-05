@@ -11,7 +11,6 @@ now_old = time()
 while True:
     now = time() # timekeeping
     dt = now-now_old # units in seconds
-    # print("DT: "+str(dt))
 
     playbackSystem.on_update(dt)
     gestureRecognizer.on_update(dt)
