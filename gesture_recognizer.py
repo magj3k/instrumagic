@@ -37,8 +37,8 @@ class GestureRecognizer(object):
         self.clustered_left_palm_acc = []
         self.clustered_right_palm_acc = []
 
-        self.left_palm_velocity = 0.0
-        self.right_palm_velocity = 0.0
+        self.left_palm_velocity = np.array((0.0, 0.0, 0.0))
+        self.right_palm_velocity = np.array((0.0, 0.0, 0.0))
         self.left_palm_acceleration = 0.0
         self.right_palm_acceleration = 0.0
 
@@ -173,7 +173,6 @@ class GestureRecognizer(object):
         
         left_palm_velocty_magnitude = np.linalg.norm(self.left_palm_velocity)
         right_palm_velocty_magnitude = np.linalg.norm(self.right_palm_velocity)
-        # print("EST left hand vel: "+str(left_palm_velocty_magnitude))
 
         # calculates acceleration of each palm position using velocity magnitude
         self.left_palm_vel_over_time.append( (left_palm_velocty_magnitude, self.t) )
