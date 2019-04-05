@@ -18,11 +18,12 @@ class PlaybackSystem(object):
     def beat_callback(self, beat):
         if beat % 4 == 0:
             print("BEAT: "+str(beat))
-            sfx = AudioSegment.from_wav("./sfx/pop.wav")
-            play(sfx)
+            # sfx = AudioSegment.from_wav("./sfx/pop.wav")
+            # play(sfx)
         else:
-            sfx = AudioSegment.from_wav("./sfx/pop2.wav")
-            play(sfx)
+            pass
+            # sfx = AudioSegment.from_wav("./sfx/pop2.wav")
+            # play(sfx)
 
     def on_update(self, dt=0.1):
         self.t += dt
