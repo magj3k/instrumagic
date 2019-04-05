@@ -16,7 +16,7 @@ class PlaybackSystem(object):
     def on_update(self, dt=0.1):
         self.t += dt
 
-        beat = self.quantize_time_to_beat(self.t)
+        beat = self.quantize_time_to_beat(self.t, False)
         if beat != self.current_beat:
             self.current_beat = beat
             if self.current_beat % 4 == 0: print("TICK: "+str(self.current_beat))

@@ -14,6 +14,7 @@ class GestureRecognizer(object):
         self.acceleration_timespan = 0.1 # in seconds
         self.acceleration_stop_timespan = 0.05 # in seconds
         self.acceleration_threshold = 80000
+        self.acceleration_stop_threshold = 500
 
         self.left_hand_available = False
         self.right_hand_available = False
@@ -133,14 +134,24 @@ class GestureRecognizer(object):
         if self.left_hand_available == True:
             if np.abs(self.left_palm_acceleration) > self.acceleration_threshold:
                 self.clustered_left_palm_acc.append( (self.left_palm_acceleration, self.t) )
-            elif np.abs(self.left_palm_acceleration) < self.acceleration_threshold*0.1 and len(self.clustered_left_palm_acc) > 0 and np.abs(self.clustered_left_palm_acc[-1][1] - self.t) > self.acceleration_stop_timespan:
+            elif np.abs(self.left_palm_acceleration) < self.acceleration_stop_threshold and len(self.clustered_left_palm_acc) > 0 and np.abs(self.clustered_left_palm_acc[-1][1] - self.t) > self.acceleration_stop_timespan:
                 self.clustered_left_palm_acc = []
 
                 # if large acceleration stops, quantize beat and classify hand configuration
                 hand_classification = self.classify_hand("left", left_palm, left_fingers)
-                quantized_beat = self.playback_system.quantize_time_to_beat(self.t, False), self.playback_system.current_beat
+                quantized_beat = max(self.playback_system.quantize_time_to_beat(self.t), self.playback_system.current_beat+1)
                 print("LARGE LEFT ACC: "+str(self.t)+", C: "+str(hand_classification)+", QB: "+str(quantized_beat))
 
+        if self.right_hand_available == True:
+            if np.abs(self.right_palm_acceleration) > self.acceleration_threshold:
+                self.clustered_right_palm_acc.append( (self.right_palm_acceleration, self.t) )
+            elif np.abs(self.right_palm_acceleration) < self.acceleration_stop_threshold and len(self.clustered_right_palm_acc) > 0 and np.abs(self.clustered_right_palm_acc[-1][1] - self.t) > self.acceleration_stop_timespan:
+                self.clustered_right_palm_acc = []
+
+                # if large acceleration stops, quantize beat and classify hand configuration
+                hand_classification = self.classify_hand("right", right_palm, right_fingers)
+                quantized_beat = max(self.playback_system.quantize_time_to_beat(self.t), self.playback_system.current_beat+1)
+                print("LARGE RIGHT ACC: "+str(self.t)+", C: "+str(hand_classification)+", QB: "+str(quantized_beat))
         
 
 
