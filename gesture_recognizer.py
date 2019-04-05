@@ -9,12 +9,23 @@ class GestureRecognizer(object):
         self.leap = Leap.Controller()
         self.playback_system = playback_system
 
+        self.gesture_timeouts = {
+            "leftfist": 0,
+            "leftpiano": 0,
+            "leftup_conduct": 0,
+            "leftdown_conduct": 0,
+            "rightfist": 0,
+            "rightpiano": 0,
+            "rightup_conduct": 0,
+            "rightdown_conduct": 0
+        }
+
         self.t = 0
         self.speed_timespan = 0.125 # in seconds
-        self.acceleration_timespan = 0.1 # in seconds
-        self.acceleration_stop_timespan = 0.05 # in seconds
-        self.acceleration_threshold = 80000
-        self.acceleration_stop_threshold = 500
+        self.acceleration_timespan = 0.125 # in seconds
+        self.acceleration_stop_timespan = 0.07 # in seconds
+        self.acceleration_threshold = 45000
+        self.acceleration_stop_threshold = 900
 
         self.left_hand_available = False
         self.right_hand_available = False
@@ -31,8 +42,70 @@ class GestureRecognizer(object):
         self.left_palm_acceleration = 0.0
         self.right_palm_acceleration = 0.0
 
+    def finger_span(self, fingers):
+        min_x = -1
+        min_y = -1
+        min_z = -1
+        max_x = -1
+        max_y = -1
+        max_z = -1
+        for finger in fingers:
+            if min_x == -1:
+                min_x = finger[0]
+            if max_x == -1:
+                max_x = finger[0]
+
+            if min_y == -1:
+                min_y = finger[1]
+            if max_y == -1:
+                max_y = finger[1]
+
+            if min_z == -1:
+                min_z = finger[2]
+            if max_z == -1:
+                max_z = finger[2]
+
+            min_x = min(min_x, finger[0])
+            max_x = max(max_x, finger[0])
+            min_y = min(min_y, finger[1])
+            max_y = max(max_y, finger[1])
+            min_z = min(min_z, finger[2])
+            max_z = max(max_z, finger[2])
+
+        return [max_x-min_x, max_y-min_y, max_z-min_z]
+
     def classify_hand(self, side, palm_position, fingers):
-        return "fist"
+        fin_span = self.finger_span(fingers)
+        # print("HAND POS: "+str(palm_position))
+        # print("FINGERS: "+str(fingers))
+        # print("FIN SPAN: "+str(fin_span))
+
+        # classifying fist
+        if self.gesture_timeouts[side+"fist"] <= 0.0 and fin_span[0] < 55.0 and fin_span[1] < 45.0 and fin_span[2] < 45.0 and palm_position[1] > 130.0:
+            self.gesture_timeouts[side+"fist"] = 0.35
+            return "fist"
+
+        # classifying upward conducting stroke
+        if self.gesture_timeouts[side+"up_conduct"] <= 0.0 and palm_position[1] > 270.0:
+            if fin_span[0] < 55.0:
+                self.gesture_timeouts[side+"up_conduct"] = 1.0
+                self.gesture_timeouts[side+"down_conduct"] = 0.5
+                return "up_conduct"
+
+        # classifying downward conducting stroke
+        if self.gesture_timeouts[side+"down_conduct"] <= 0.0 and palm_position[1] < 160.0:
+            if fin_span[0] < 60.0:
+                self.gesture_timeouts[side+"down_conduct"] = 1.0
+                self.gesture_timeouts[side+"up_conduct"] = 0.5
+                return "down_conduct"
+
+        # classifying piano stroke
+        if self.gesture_timeouts[side+"piano"] <= 0.0 and palm_position[1] < 240.0:
+            if fin_span[0] > 100.0 and fin_span[1] < 30.0 and fin_span[2] < 92.0:
+                self.gesture_timeouts[side+"piano"] = 0.35
+                return "piano"
+
+        return "none"
 
     def gather_leap_data(self):
         leap_frame = self.leap.frame()
@@ -43,6 +116,10 @@ class GestureRecognizer(object):
 
     def on_update(self, dt=0.1) :
         self.t += dt
+
+        # time management
+        for key in self.gesture_timeouts.keys():
+            self.gesture_timeouts[key] = max(self.gesture_timeouts[key]-dt, 0.0)
 
         # gathering raw data from the Leap
         left_palm, right_palm, left_fingers, right_fingers = self.gather_leap_data()
@@ -140,7 +217,7 @@ class GestureRecognizer(object):
                 # if large acceleration stops, quantize beat and classify hand configuration
                 hand_classification = self.classify_hand("left", left_palm, left_fingers)
                 quantized_beat = max(self.playback_system.quantize_time_to_beat(self.t), self.playback_system.current_beat+1)
-                print("LARGE LEFT ACC: "+str(self.t)+", C: "+str(hand_classification)+", QB: "+str(quantized_beat))
+                if hand_classification != "none": print("LARGE LEFT ACC: "+str(self.t)+", C: "+str(hand_classification)+", QB: "+str(quantized_beat))
 
         if self.right_hand_available == True:
             if np.abs(self.right_palm_acceleration) > self.acceleration_threshold:
@@ -151,7 +228,7 @@ class GestureRecognizer(object):
                 # if large acceleration stops, quantize beat and classify hand configuration
                 hand_classification = self.classify_hand("right", right_palm, right_fingers)
                 quantized_beat = max(self.playback_system.quantize_time_to_beat(self.t), self.playback_system.current_beat+1)
-                print("LARGE RIGHT ACC: "+str(self.t)+", C: "+str(hand_classification)+", QB: "+str(quantized_beat))
+                if hand_classification != "none": print("LARGE RIGHT ACC: "+str(self.t)+", C: "+str(hand_classification)+", QB: "+str(quantized_beat))
         
 
 
