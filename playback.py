@@ -2,10 +2,12 @@ from math import *
 import numpy as np
 
 class PlaybackSystem(object):
-    def __init__(self, t=0):
+    def __init__(self, t=0, beat_callback=None):
         self.t = t
         self.beats_per_minute = 100
         self.current_beat = 0
+
+        self.beat_callback = beat_callback
 
     def quantize_time_to_beat(self, time, round_up=True):
         bps = self.beats_per_minute/60.0
@@ -19,4 +21,6 @@ class PlaybackSystem(object):
         beat = self.quantize_time_to_beat(self.t, False)
         if beat != self.current_beat:
             self.current_beat = beat
-            if self.current_beat % 4 == 0: print("TICK: "+str(self.current_beat))
+            if self.beat_callback != None: self.beat_callback(self.current_beat)
+
+            if self.current_beat % 4 == 0: print("BEAT: "+str(self.current_beat))
