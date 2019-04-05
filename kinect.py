@@ -15,10 +15,12 @@ import time
 import threading
 import numpy as np
 import math
-from . import core
 import socket
 
-
+g_terminate_funcs = []
+def register_terminate_func(f):
+    global g_terminate_funcs
+    g_terminate_funcs.append(f)
 
 # This class assumes that Synapse is running.
 # It handles communications with Synapse and presents joint data to
@@ -83,7 +85,7 @@ class Kinect(threading.Thread):
         # start the server listening for messages
         self.start()
 
-        core.register_terminate_func(self.close)
+        register_terminate_func(self.close)
 
     # close must be called before app termination or the app will hang
     def close(self):

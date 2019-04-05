@@ -120,10 +120,19 @@ def leap_two_palms(frame):
 
 
 # Returns a tuple of 5 positions for the fingers of the frontmost hand
-def leap_fingers_fingers(frame):
+def leap_fingers_frame(frame, side="left"):
     if frame.hands.is_empty:
         return [np.zeros(3) for x in range(5)]
-    hand = frame.hands.frontmost
+
+    hand = frame.hands[0]
+    if hand.is_left and side != "left":
+        hand = frame.hands[-1]
+
+    if hand.is_left and side != "left":
+        return [np.zeros(3) for x in range(5)]
+    if not hand.is_left and side == "left":
+        return [np.zeros(3) for x in range(5)]
+
     fingers = hand.fingers
     return [pt_to_array(f.tip_position) for f in fingers]
 
