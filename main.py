@@ -1,10 +1,10 @@
 from time import time
-from gesture_recognizer import *
+#from gesture_recognizer import *
 from playback import *
-from ui import *
+#from ui import *
 
 playbackSystem = PlaybackSystem()
-gestureRecognizer = GestureRecognizer(playbackSystem)
+#gestureRecognizer = GestureRecognizer(playbackSystem)
 
 # launches ui
 # launch_ui()
@@ -16,6 +16,6 @@ while True:
     dt = now-now_old # units in seconds
 
     playbackSystem.on_update(dt)
-    gestureRecognizer.on_update(dt)
+    #gestureRecognizer.on_update(dt)
 
     now_old = now # timekeeping

@@ -1,12 +1,12 @@
 from math import *
 import numpy as np
-from pydub import AudioSegment
-from pydub.playback import play
+#from pydub import AudioSegment
+#from pydub.playback import play
 
 class PlaybackSystem(object):
     def __init__(self, t=0):
         self.t = t
-        self.beats_per_minute = 100
+        self.beats_per_minute = 120
         self.current_beat = 0
 
     def quantize_time_to_beat(self, time, round_up=True):
@@ -21,6 +21,7 @@ class PlaybackSystem(object):
             # sfx = AudioSegment.from_wav("./sfx/pop.wav")
             # play(sfx)
         else:
+            print(beat)
             pass
             # sfx = AudioSegment.from_wav("./sfx/pop2.wav")
             # play(sfx)
