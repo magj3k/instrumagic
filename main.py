@@ -6,6 +6,9 @@ from ui import *
 playbackSystem = PlaybackSystem()
 gestureRecognizer = GestureRecognizer(playbackSystem)
 
+# launches ui
+# launch_ui()
+
 # main on_update loop
 now_old = time()
 while True:
