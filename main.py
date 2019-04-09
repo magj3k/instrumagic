@@ -19,3 +19,8 @@ while True:
     #gestureRecognizer.on_update(dt)
 
     now_old = now # timekeeping
+
+
+
+    #######
+
