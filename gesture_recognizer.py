@@ -5,9 +5,10 @@ import Leap
 import numpy as np
 
 class GestureRecognizer(object):
-    def __init__(self, playback_system):
+    def __init__(self, quantize_func, play_func):
         self.leap = Leap.Controller()
-        self.playback_system = playback_system
+        self.quantize_func = quantize_func
+        self.play_func = play_func
 
         self.gesture_timeouts = {
             "leftfist": 0,
@@ -23,9 +24,9 @@ class GestureRecognizer(object):
         self.t = 0
         self.speed_timespan = 0.125 # in seconds
         self.acceleration_timespan = 0.125 # in seconds
-        self.acceleration_stop_timespan = 0.065 # in seconds
-        self.acceleration_threshold = 44000
-        self.acceleration_stop_threshold = 950
+        self.acceleration_stop_timespan = 0.04 # in seconds
+        self.acceleration_threshold = 8000
+        self.acceleration_stop_threshold = 200
 
         self.left_hand_available = False
         self.right_hand_available = False
@@ -206,6 +207,8 @@ class GestureRecognizer(object):
                 break
         self.right_palm_acceleration = self.right_palm_acceleration / max(right_palm_valid_sample_count, 1)
 
+        # print("ACC: "+str(self.left_palm_acceleration)+", "+str(self.right_palm_acceleration))
+
         # if large acceleration occurs, track clustered acceleration points
         if self.left_hand_available == True:
             if np.abs(self.left_palm_acceleration) > self.acceleration_threshold:
@@ -215,8 +218,12 @@ class GestureRecognizer(object):
 
                 # if large acceleration stops, quantize beat and classify hand configuration
                 hand_classification = self.classify_hand("left", left_palm, left_fingers)
-                quantized_beat = max(self.playback_system.quantize_time_to_beat(self.t), self.playback_system.current_beat+1)
-                if hand_classification != "none": print("LARGE LEFT ACC: "+str(self.t)+", C: "+str(hand_classification)+", QB: "+str(quantized_beat))
+                quantized_beat = self.quantize_func(self.t)
+                if hand_classification != "none":
+                    self.play_func()
+                    print("LARGE LEFT ACC: "+str(self.t)+", C: "+str(hand_classification)+", QB: "+str(quantized_beat))
+                else:
+                    print("LARGE UNRECOGNIZED LEFT ACC: "+str(self.t))
 
         if self.right_hand_available == True:
             if np.abs(self.right_palm_acceleration) > self.acceleration_threshold:
@@ -226,8 +233,12 @@ class GestureRecognizer(object):
 
                 # if large acceleration stops, quantize beat and classify hand configuration
                 hand_classification = self.classify_hand("right", right_palm, right_fingers)
-                quantized_beat = max(self.playback_system.quantize_time_to_beat(self.t), self.playback_system.current_beat+1)
-                if hand_classification != "none": print("LARGE RIGHT ACC: "+str(self.t)+", C: "+str(hand_classification)+", QB: "+str(quantized_beat))
+                quantized_beat = self.quantize_func(self.t)
+                if hand_classification != "none":
+                    self.play_func()
+                    print("LARGE RIGHT ACC: "+str(self.t)+", C: "+str(hand_classification)+", QB: "+str(quantized_beat))
+                else:
+                    print("LARGE UNRECOGNIZED RIGHT ACC: "+str(self.t))
         
 
 

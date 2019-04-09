@@ -2,8 +2,8 @@ from math import *
 import numpy as np
 #from pydub import AudioSegment
 #from pydub.playback import play
-from music21 import instrument, midi
-import pygame
+#from music21 import instrument, midi
+#import pygame
 
 
 class PlaybackSystem(object):
@@ -11,8 +11,8 @@ class PlaybackSystem(object):
         self.t = t
         self.beats_per_minute = 120
         self.current_beat = 0
-        pygame.init()
-        pygame.mixer.music.load("test.wav")
+        #pygame.init()
+        #pygame.mixer.music.load("test.wav")
 
     def quantize_time_to_beat(self, time, round_up=True):
         bps = self.beats_per_minute/60.0
@@ -23,7 +23,7 @@ class PlaybackSystem(object):
     def beat_callback(self, beat):
         if beat % 4 == 0:
             print("BEAT: "+str(beat))
-            pygame.mixer.music.play()
+            #pygame.mixer.music.play()
 
 
 
