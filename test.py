@@ -31,7 +31,6 @@ def play_for(sample_wave, ms):
     pygame.time.delay(ms)
     sound.stop()
 
-pygame.init()
 play_for(sum([sine_wave(440, 4096), sine_wave(880, 4096)]), 1000)
 
 
