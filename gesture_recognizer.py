@@ -27,8 +27,8 @@ class GestureRecognizer(object):
         self.speed_timespan = 0.04 # in seconds
         self.acceleration_timespan = 0.04 # in seconds
         self.acceleration_stop_timespan = 0.01 # in seconds
-        self.acceleration_threshold = 4000
-        self.acceleration_stop_threshold = 300
+        self.acceleration_threshold = 5000
+        self.acceleration_stop_threshold = 250
 
         self.left_hand_available = False
         self.right_hand_available = False
@@ -91,15 +91,15 @@ class GestureRecognizer(object):
         # classifying upward conducting stroke
         if self.gesture_timeouts[side+"up_conduct"] <= 0.0 and palm_position[1] > 250.0:
             if fin_span[0] < 85.0:
-                self.gesture_timeouts[side+"up_conduct"] = 0.25
-                self.gesture_timeouts[side+"down_conduct"] = 0.1
+                self.gesture_timeouts[side+"up_conduct"] = 0.35
+                self.gesture_timeouts[side+"down_conduct"] = 0.15
                 return "up_conduct"
 
         # classifying downward conducting stroke
         if self.gesture_timeouts[side+"down_conduct"] <= 0.0 and palm_position[1] < 180.0:
             if fin_span[0] < 85.0:
-                self.gesture_timeouts[side+"down_conduct"] = 0.25
-                self.gesture_timeouts[side+"up_conduct"] = 0.1
+                self.gesture_timeouts[side+"down_conduct"] = 0.35
+                self.gesture_timeouts[side+"up_conduct"] = 0.15
                 return "down_conduct"
 
         # classifying piano stroke

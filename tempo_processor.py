@@ -5,7 +5,7 @@ class TempoProcessor(object):
         self.previous_up_conducts = [] # as timestamps
         self.previous_down_conducts = [] # as timestamps
 
-        self.clear_threshold = 6.0 # in seconds
+        self.clear_threshold = 2.5 # in seconds
         self.change_tempo_func = change_tempo_func
 
     def strong_sample_size(self):
@@ -17,11 +17,15 @@ class TempoProcessor(object):
                 self.previous_up_conducts = [timestamp]
             else:
                 self.previous_up_conducts.append(timestamp)
+                if len(self.previous_up_conducts) > 6:
+                    self.previous_up_conducts = self.previous_up_conducts[1:]
         elif up_or_down == "down":
             if len(self.previous_down_conducts) > 0 and np.abs(timestamp - self.previous_down_conducts[-1]) > self.clear_threshold:
                 self.previous_down_conducts = [timestamp]
             else:
                 self.previous_down_conducts.append(timestamp)
+                if len(self.previous_down_conducts) > 6:
+                    self.previous_down_conducts = self.previous_down_conducts[1:]
 
     def estimate_tempo(self, reference_tempo):
         sample_size = self.strong_sample_size()
@@ -69,7 +73,7 @@ class TempoProcessor(object):
         elif time_diff_sum_up == 0 and time_diff_sum_down == 0:
             return None
 
-        suggested_tempo = time_diff_avg * 60.0
+        suggested_tempo = 60.0 / (time_diff_avg * 0.5)
 
-        return (suggested_tempo * 0.65) + (reference_tempo * 0.35)
+        return (suggested_tempo * 0.75) + (reference_tempo * 0.25)
 
