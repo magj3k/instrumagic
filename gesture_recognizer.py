@@ -24,11 +24,11 @@ class GestureRecognizer(object):
         }
 
         self.t = 0
-        self.speed_timespan = 0.05 # in seconds
-        self.acceleration_timespan = 0.05 # in seconds
-        self.acceleration_stop_timespan = 0.02 # in seconds
-        self.acceleration_threshold = 3000
-        self.acceleration_stop_threshold = 350
+        self.speed_timespan = 0.04 # in seconds
+        self.acceleration_timespan = 0.04 # in seconds
+        self.acceleration_stop_timespan = 0.01 # in seconds
+        self.acceleration_threshold = 4000
+        self.acceleration_stop_threshold = 300
 
         self.left_hand_available = False
         self.right_hand_available = False
