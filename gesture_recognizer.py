@@ -5,10 +5,12 @@ import Leap
 import numpy as np
 
 class GestureRecognizer(object):
-    def __init__(self, quantize_func, play_func):
+    def __init__(self, quantize_func, play_func, tempo_processor, tempo_map):
         self.leap = Leap.Controller()
         self.quantize_func = quantize_func
         self.play_func = play_func
+        self.tempo_processor = tempo_processor
+        self.tempo_map = tempo_map
 
         self.gesture_timeouts = {
             "leftfist": 0,
@@ -22,11 +24,11 @@ class GestureRecognizer(object):
         }
 
         self.t = 0
-        self.speed_timespan = 0.125 # in seconds
-        self.acceleration_timespan = 0.125 # in seconds
-        self.acceleration_stop_timespan = 0.035 # in seconds
-        self.acceleration_threshold = 7500
-        self.acceleration_stop_threshold = 150
+        self.speed_timespan = 0.05 # in seconds
+        self.acceleration_timespan = 0.05 # in seconds
+        self.acceleration_stop_timespan = 0.02 # in seconds
+        self.acceleration_threshold = 3000
+        self.acceleration_stop_threshold = 350
 
         self.left_hand_available = False
         self.right_hand_available = False
@@ -77,33 +79,33 @@ class GestureRecognizer(object):
 
     def classify_hand(self, side, palm_position, fingers):
         fin_span = self.finger_span(fingers)
-        # print("HAND POS: "+str(palm_position))
+        print("HAND POS: "+str(palm_position))
         # print("FINGERS: "+str(fingers))
         # print("FIN SPAN: "+str(fin_span))
 
         # classifying fist
         if self.gesture_timeouts[side+"fist"] <= 0.0 and fin_span[0] < 55.0 and fin_span[1] < 45.0 and fin_span[2] < 45.0 and palm_position[1] > 130.0:
-            self.gesture_timeouts[side+"fist"] = 0.35
+            self.gesture_timeouts[side+"fist"] = 0.25
             return "fist"
 
         # classifying upward conducting stroke
-        if self.gesture_timeouts[side+"up_conduct"] <= 0.0 and palm_position[1] > 270.0:
-            if fin_span[0] < 55.0:
-                self.gesture_timeouts[side+"up_conduct"] = 1.0
-                self.gesture_timeouts[side+"down_conduct"] = 0.5
+        if self.gesture_timeouts[side+"up_conduct"] <= 0.0 and palm_position[1] > 250.0:
+            if fin_span[0] < 85.0:
+                self.gesture_timeouts[side+"up_conduct"] = 0.25
+                self.gesture_timeouts[side+"down_conduct"] = 0.1
                 return "up_conduct"
 
         # classifying downward conducting stroke
-        if self.gesture_timeouts[side+"down_conduct"] <= 0.0 and palm_position[1] < 160.0:
-            if fin_span[0] < 60.0:
-                self.gesture_timeouts[side+"down_conduct"] = 1.0
-                self.gesture_timeouts[side+"up_conduct"] = 0.5
+        if self.gesture_timeouts[side+"down_conduct"] <= 0.0 and palm_position[1] < 180.0:
+            if fin_span[0] < 85.0:
+                self.gesture_timeouts[side+"down_conduct"] = 0.25
+                self.gesture_timeouts[side+"up_conduct"] = 0.1
                 return "down_conduct"
 
         # classifying piano stroke
         if self.gesture_timeouts[side+"piano"] <= 0.0 and palm_position[1] < 240.0:
             if fin_span[0] > 100.0 and fin_span[1] < 30.0 and fin_span[2] < 92.0:
-                self.gesture_timeouts[side+"piano"] = 0.35
+                self.gesture_timeouts[side+"piano"] = 0.25
                 return "piano"
 
         return "none"
@@ -222,6 +224,19 @@ class GestureRecognizer(object):
                 if hand_classification != "none":
                     self.play_func()
                     print("LARGE LEFT ACC: "+str(self.t)+", C: "+str(hand_classification)+", QB: "+str(quantized_beat))
+
+                    if hand_classification == "up_conduct":
+                        self.tempo_processor.add_sample(self.t, "up")
+                        new_tempo = self.tempo_processor.estimate_tempo(self.tempo_map.bpm)
+                        if new_tempo != None:
+                            print("NEW TEMPO: "+str(new_tempo))
+                            self.tempo_map.set_tempo(new_tempo, self.t)
+                    elif hand_classification == "down_conduct":
+                        self.tempo_processor.add_sample(self.t, "down")
+                        new_tempo = self.tempo_processor.estimate_tempo(self.tempo_map.bpm)
+                        if new_tempo != None:
+                            print("NEW TEMPO: "+str(new_tempo))
+                            self.tempo_map.set_tempo(new_tempo, self.t)
                 else:
                     print("LARGE UNRECOGNIZED LEFT ACC: "+str(self.t))
 
@@ -237,6 +252,19 @@ class GestureRecognizer(object):
                 if hand_classification != "none":
                     self.play_func()
                     print("LARGE RIGHT ACC: "+str(self.t)+", C: "+str(hand_classification)+", QB: "+str(quantized_beat))
+
+                    if hand_classification == "up_conduct":
+                        self.tempo_processor.add_sample(self.t, "up")
+                        new_tempo = self.tempo_processor.estimate_tempo(self.tempo_map.bpm)
+                        if new_tempo != None:
+                            print("NEW TEMPO: "+str(new_tempo))
+                            self.tempo_map.set_tempo(new_tempo, self.t)
+                    elif hand_classification == "down_conduct":
+                        self.tempo_processor.add_sample(self.t, "down")
+                        new_tempo = self.tempo_processor.estimate_tempo(self.tempo_map.bpm)
+                        if new_tempo != None:
+                            print("NEW TEMPO: "+str(new_tempo))
+                            self.tempo_map.set_tempo(new_tempo, self.t)
                 else:
                     print("LARGE UNRECOGNIZED RIGHT ACC: "+str(self.t))
         
