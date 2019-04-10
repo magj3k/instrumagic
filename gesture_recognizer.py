@@ -222,21 +222,27 @@ class GestureRecognizer(object):
                 hand_classification = self.classify_hand("left", left_palm, left_fingers)
                 quantized_beat = self.quantize_func(self.t)
                 if hand_classification != "none":
-                    self.play_func()
                     print("LARGE LEFT ACC: "+str(self.t)+", C: "+str(hand_classification)+", QB: "+str(quantized_beat))
 
                     if hand_classification == "up_conduct":
+                        self.play_func()
                         self.tempo_processor.add_sample(self.t, "up")
                         new_tempo = self.tempo_processor.estimate_tempo(self.tempo_map.bpm)
                         if new_tempo != None:
                             print("NEW TEMPO: "+str(new_tempo))
                             self.tempo_map.set_tempo(new_tempo, self.t)
                     elif hand_classification == "down_conduct":
+                        self.play_func()
                         self.tempo_processor.add_sample(self.t, "down")
                         new_tempo = self.tempo_processor.estimate_tempo(self.tempo_map.bpm)
                         if new_tempo != None:
                             print("NEW TEMPO: "+str(new_tempo))
                             self.tempo_map.set_tempo(new_tempo, self.t)
+                    elif hand_classification == "piano":
+                        self.play_func("piano")
+                    elif hand_classification == "fist":
+                        self.play_func("drums")
+
                 else:
                     print("LARGE UNRECOGNIZED LEFT ACC: "+str(self.t))
 
@@ -250,21 +256,27 @@ class GestureRecognizer(object):
                 hand_classification = self.classify_hand("right", right_palm, right_fingers)
                 quantized_beat = self.quantize_func(self.t)
                 if hand_classification != "none":
-                    self.play_func()
                     print("LARGE RIGHT ACC: "+str(self.t)+", C: "+str(hand_classification)+", QB: "+str(quantized_beat))
 
                     if hand_classification == "up_conduct":
+                        self.play_func()
                         self.tempo_processor.add_sample(self.t, "up")
                         new_tempo = self.tempo_processor.estimate_tempo(self.tempo_map.bpm)
                         if new_tempo != None:
                             print("NEW TEMPO: "+str(new_tempo))
                             self.tempo_map.set_tempo(new_tempo, self.t)
                     elif hand_classification == "down_conduct":
+                        self.play_func()
                         self.tempo_processor.add_sample(self.t, "down")
                         new_tempo = self.tempo_processor.estimate_tempo(self.tempo_map.bpm)
                         if new_tempo != None:
                             print("NEW TEMPO: "+str(new_tempo))
                             self.tempo_map.set_tempo(new_tempo, self.t)
+                    elif hand_classification == "piano":
+                        self.play_func("piano")
+                    elif hand_classification == "fist":
+                        self.play_func("drums")
+
                 else:
                     print("LARGE UNRECOGNIZED RIGHT ACC: "+str(self.t))
         
