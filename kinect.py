@@ -1,126 +1,192 @@
-#####################################################################
-#
-# kinect.py
-#
-# Copyright (c) 2015, Eran Egozy
-#
-# Released under the MIT License (http://opensource.org/licenses/MIT)
-#
-#####################################################################
+"""Kinect interface with video, depth stream, and skeletal tracking"""
+
+import thread
+import itertools
+import ctypes
+import sys
+
+from pykinect import nui
+from pykinect.nui import JointId, SkeletonTrackingState
+
+import pygame
+from pygame.color import THECOLORS
+from pygame.locals import *
+
+KINECTEVENT = pygame.USEREVENT
+DEPTH_WINSIZE = 640,480
+VIDEO_WINSIZE = 640,480
+
+SKELETON_COLORS = [THECOLORS["red"], 
+                   THECOLORS["blue"], 
+                   THECOLORS["green"], 
+                   THECOLORS["orange"], 
+                   THECOLORS["purple"], 
+                   THECOLORS["yellow"], 
+                   THECOLORS["violet"]]
+
+LEFT_ARM = (JointId.ShoulderCenter, 
+            JointId.ShoulderLeft, 
+            JointId.ElbowLeft, 
+            JointId.WristLeft, 
+            JointId.HandLeft)
+RIGHT_ARM = (JointId.ShoulderCenter, 
+             JointId.ShoulderRight, 
+             JointId.ElbowRight, 
+             JointId.WristRight, 
+             JointId.HandRight)
+LEFT_LEG = (JointId.HipCenter, 
+            JointId.HipLeft, 
+            JointId.KneeLeft, 
+            JointId.AnkleLeft, 
+            JointId.FootLeft)
+RIGHT_LEG = (JointId.HipCenter, 
+             JointId.HipRight, 
+             JointId.KneeRight, 
+             JointId.AnkleRight, 
+             JointId.FootRight)
+SPINE = (JointId.HipCenter, 
+         JointId.Spine, 
+         JointId.ShoulderCenter, 
+         JointId.Head)
+
+skeleton_to_depth_image = nui.SkeletonEngine.skeleton_to_depth_image
+
+# recipe to get address of surface: http://archives.seul.org/pygame/users/Apr-2008/msg00218.html
+if hasattr(ctypes.pythonapi, 'Py_InitModule4'):
+   Py_ssize_t = ctypes.c_int
+elif hasattr(ctypes.pythonapi, 'Py_InitModule4_64'):
+   Py_ssize_t = ctypes.c_int64
+else:
+   raise TypeError("Cannot determine type of Py_ssize_t")
+
+_PyObject_AsWriteBuffer = ctypes.pythonapi.PyObject_AsWriteBuffer
+_PyObject_AsWriteBuffer.restype = ctypes.c_int
+_PyObject_AsWriteBuffer.argtypes = [ctypes.py_object,
+                                  ctypes.POINTER(ctypes.c_void_p),
+                                  ctypes.POINTER(Py_ssize_t)]
+
+def surface_to_array(surface):
+   buffer_interface = surface.get_buffer()
+   address = ctypes.c_void_p()
+   size = Py_ssize_t()
+   _PyObject_AsWriteBuffer(buffer_interface,
+                          ctypes.byref(address), ctypes.byref(size))
+   bytes = (ctypes.c_byte * size.value).from_address(address.value)
+   bytes.object = buffer_interface
+   return bytes
 
 
-# from .OSC import OSCServer, ThreadingOSCServer, OSCClient, OSCMessage
-from pythonosc import osc_server, dispatcher, udp_client
-import time
-import threading
-import numpy as np
-import math
-import socket
+class Kinect:
 
-g_terminate_funcs = []
-def register_terminate_func(f):
-    global g_terminate_funcs
-    g_terminate_funcs.append(f)
+    def __init__(self, display=0, draw_skeleton=False, elevation_angle=20):
+        self.video_display = display == 1
+        self.depth_display = display == 2
+        self.draw_skeleton = draw_skeleton
+        self.elevation_angle = elevation_angle
+        self.listeners = []
 
-# This class assumes that Synapse is running.
-# It handles communications with Synapse and presents joint data to
-# the app.
-class Kinect(threading.Thread):
-    kRightHand = "/righthand"
-    kLeftHand = "/lefthand"
-    kRightElbow = "/rightelbow"
-    kLeftElbow = "/leftelbow"
-    kRightFoot = "/rightfoot"
-    kLeftFoot = "/leftfoot"
-    kRightKnee = "/rightknee"
-    kLeftKnee = "/leftknee"
-    kHead = "/head"
-    kTorso = "/torso"
-    kLeftShoulder = "/leftshoulder"
-    kRightShoulder = "/rightshoulder"
-    kLeftHip = "/lefthip"
-    kRightHip = "/righthip"
-    kClosestHand = "/closesthand"
+    def add_listener(self, callback):
+        self.listeners.append(callback)
 
-    # position coordinate system type
-    kBody  = '_pos_body'
-    kWorld = '_pos_world'
-    kScreen = '_pos_screen'
+    def start(self):
+        pygame.init()
+        self.kinect = nui.Runtime()
 
-    kPosNum = { kBody: 1, kWorld: 2, kScreen: 3 }
+        self.kinect.camera.elevation_angle = self.elevation_angle
 
-    def __init__(self, remote_ip = None, pos_type = kBody):
-        super(Kinect, self).__init__()
+        self.kinect.skeleton_engine.enabled = True
 
-        self.pos_type = pos_type
+        if self.video_display or self.depth_display:
+            self.screen_lock = thread.allocate()
+            self.screen = pygame.display.set_mode(VIDEO_WINSIZE if self.video_display else DEPTH_WINSIZE, 0, 32 if self.video_display else 16)
+            pygame.display.set_caption('PyKinect')
+            self.skeletons = None
+            self.screen.fill(THECOLORS["black"])
+            
+            if self.video_display:
+                self.kinect.video_frame_ready += self.video_frame_ready
+                self.kinect.video_stream.open(nui.ImageStreamType.Video, 2, nui.ImageResolution.Resolution640x480, nui.ImageType.Color)
+            if self.depth_display:
+                self.kinect.depth_frame_ready += self.depth_frame_ready
+                self.kinect.depth_stream.open(nui.ImageStreamType.Depth, 2, nui.ImageResolution.Resolution640x480, nui.ImageType.Depth)
 
-        # Synapse is running on a remote machine:
-        if remote_ip:
-            listen_ip = socket.gethostbyname(socket.gethostname())
-            listen_port = 12345
+        self.kinect.skeleton_frame_ready += self.post_frame
 
-            send_ip = remote_ip
-            send_port = 12321
+        self.dispInfo = pygame.display.Info()
 
-        # Synapse is running locally on this machine, using localhost
-        else:
-            listen_ip = 'localhost'
-            listen_port = 12345
+    def draw_skeleton_data(self, pSkelton, index, positions, width = 4):
+        start = pSkelton.SkeletonPositions[positions[0]]
+           
+        for position in itertools.islice(positions, 1, None):
+            next = pSkelton.SkeletonPositions[position.value]
+            
+            curstart = skeleton_to_depth_image(start, self.dispInfo.current_w, self.dispInfo.current_h) 
+            curend = skeleton_to_depth_image(next, self.dispInfo.current_w, self.dispInfo.current_h)
 
-            send_ip = 'localhost'
-            send_port = 12346
+            pygame.draw.line(self.screen, SKELETON_COLORS[index], curstart, curend, width)
+            
+            start = next
 
-        # create a dispatcher and server, which handles incoming messages from Synapse
-        self.dispatcher = dispatcher.Dispatcher()
-        self.dispatcher.map( '/tracking_skeleton', self.callback_tracking_skeleton )
-        self.server = osc_server.ThreadingOSCUDPServer( (listen_ip, listen_port), self.dispatcher)
+    def draw_skeletons(self, skeletons):
+        for index, data in enumerate(skeletons):
+            # draw the Head
+            HeadPos = skeleton_to_depth_image(data.SkeletonPositions[JointId.Head], self.dispInfo.current_w, self.dispInfo.current_h) 
+            self.draw_skeleton_data(data, index, SPINE, 10)
+            pygame.draw.circle(self.screen, SKELETON_COLORS[index], (int(HeadPos[0]), int(HeadPos[1])), 20, 0)
+        
+            # drawing the limbs
+            self.draw_skeleton_data(data, index, LEFT_ARM)
+            self.draw_skeleton_data(data, index, RIGHT_ARM)
+            self.draw_skeleton_data(data, index, LEFT_LEG)
+            self.draw_skeleton_data(data, index, RIGHT_LEG)
 
-        # create the client, which sends control messages to Synapse
-        self.client = udp_client.SimpleUDPClient(send_ip, send_port)
 
-        # member vars
-        self.active_joints = {}
-        self.last_heartbeat_time = 0
+    def depth_frame_ready(self, frame):
+        if not self.depth_display:
+            return
 
-        # start the server listening for messages
-        self.start()
+        with self.screen_lock:
+            address = surface_to_array(self.screen)
+            frame.image.copy_bits(address)
+            del address
+            if self.skeletons is not None and self.draw_skeleton:
+                self.draw_skeletons(self.skeletons)
+            pygame.display.update()    
 
-        register_terminate_func(self.close)
 
-    # close must be called before app termination or the app will hang
-    def close(self):
-        self.server.shutdown()
-        self.server.server_close()
+    def video_frame_ready(self, frame):
+        if not self.video_display:
+            return
 
-    def run(self):
-        print("Worker thread entry point")
-        self.server.serve_forever()
+        with self.screen_lock:
+            address = surface_to_array(self.screen)
+            frame.image.copy_bits(address)
+            del address
+            if self.skeletons is not None and self.draw_skeleton:
+                self.draw_skeletons(self.skeletons)
+            pygame.display.update()
 
-    def add_joint(self, joint):
-        self.dispatcher.map( joint + self.pos_type, self.callback )        
-        self.active_joints[joint] = np.array([0.0, 0.0, 0.0])
-
-    def on_update(self):
-        now = time.time()
-        send_heartbeat = now - self.last_heartbeat_time > 3.0
-        if send_heartbeat:
-            self.last_heartbeat_time = now
-
+    def post_frame(self, frame):
         try:
-            if send_heartbeat:
-                for j in self.active_joints:
-                    msg = (j + "_trackjointpos", Kinect.kPosNum[self.pos_type])
-                    self.client.send_message(*msg)
-        except Exception as x:
-            print(x, 'sending to', self.client._address, self.client._port)
+            skeleton = next(skeleton.SkeletonPositions for skeleton in frame.SkeletonData if skeleton.eTrackingState == SkeletonTrackingState.TRACKED)
+        except:
+            return
 
-    def get_joint(self, joint) :
-        return np.copy(self.active_joints[joint])
+        for listener in self.listeners:
+            listener(skeleton)
 
-    def callback(self, addr, x, y, z):
-        joint_name = addr.replace(self.pos_type, "")
-        self.active_joints[joint_name] = np.array((x,y,z))
+        self.skeletons = frame.SkeletonData
+        if self.draw_skeleton:
+            self.draw_skeletons(self.skeletons)
+            pygame.display.update()
 
-    def callback_tracking_skeleton(self, addr, args):
-        print('tracking_skeleton', args)
+def printer(skeleton):
+    print(skeleton[JointId.HandRight])
+    sys.stdout.flush()
 
+if __name__ == '__main__':
+    kinect = Kinect(1, True)
+    kinect.add_listener(printer)
+    kinect.start()
+    while True:
+        pass
