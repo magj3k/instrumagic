@@ -4,6 +4,8 @@ import thread
 import itertools
 import ctypes
 import sys
+from threading import Timer
+import time
 
 from pykinect import nui
 from pykinect.nui import JointId, SkeletonTrackingState
@@ -11,6 +13,8 @@ from pykinect.nui import JointId, SkeletonTrackingState
 import pygame
 from pygame.color import THECOLORS
 from pygame.locals import *
+
+from matplotlib import pyplot as plt
 
 KINECTEVENT = pygame.USEREVENT
 DEPTH_WINSIZE = 640,480
@@ -110,9 +114,31 @@ class Kinect:
                 self.kinect.depth_frame_ready += self.depth_frame_ready
                 self.kinect.depth_stream.open(nui.ImageStreamType.Depth, 2, nui.ImageResolution.Resolution640x480, nui.ImageType.Depth)
 
-        self.kinect.skeleton_frame_ready += self.post_frame
+        #self.kinect.skeleton_frame_ready += self.post_frame
 
         self.dispInfo = pygame.display.Info()
+
+        self.update_skeleton()
+
+    def update_skeleton(self):
+        try:
+            self.skeletons = self.kinect.skeleton_engine.get_next_frame().SkeletonData
+        except:
+            return
+
+        try:
+            skeleton = next(skeleton.SkeletonPositions for skeleton in self.skeletons if skeleton.eTrackingState == SkeletonTrackingState.TRACKED)
+        except:
+            skeleton = None
+
+        for listener in self.listeners:
+            listener(skeleton)
+
+        if self.draw_skeleton:
+            self.draw_skeletons(self.skeletons)
+            pygame.display.update()
+
+        Timer(1.0/30, self.update_skeleton).start()
 
     def draw_skeleton_data(self, pSkelton, index, positions, width = 4):
         start = pSkelton.SkeletonPositions[positions[0]]
@@ -180,13 +206,20 @@ class Kinect:
             self.draw_skeletons(self.skeletons)
             pygame.display.update()
 
+
 def printer(skeleton):
-    print(skeleton[JointId.HandRight])
+    if skeleton is None:
+        print('oops')
+    else:
+        print(skeleton[JointId.HandRight].y)
     sys.stdout.flush()
 
 if __name__ == '__main__':
+    fig, ax = plt.subplots(1, 1)
+
     kinect = Kinect(1, True)
     kinect.add_listener(printer)
     kinect.start()
+
     while True:
         pass
