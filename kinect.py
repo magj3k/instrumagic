@@ -138,7 +138,7 @@ class Kinect:
             self.draw_skeletons(self.skeletons)
             pygame.display.update()
 
-        Timer(1.0/30, self.update_skeleton).start()
+        Timer(.01, self.update_skeleton).start()
 
     def draw_skeleton_data(self, pSkelton, index, positions, width = 4):
         start = pSkelton.SkeletonPositions[positions[0]]
@@ -205,14 +205,99 @@ class Kinect:
         if self.draw_skeleton:
             self.draw_skeletons(self.skeletons)
             pygame.display.update()
+################################################
+"""DON'T TOUCH CODE ON TOP OF THIS OR CHRIS WILL..."""
+################################################
+
+class skeleton_acceleration:
+
+    def __init__(self):
+
+        self.N=3 
+        self.hand_r_positions = [None for i in range(self.N+1)]
+        self.hand_r_acce = None #acceleration
+
+        self.hand_l_positions = [None for i in range(self.N+1)]
+        self.hand_l_acce = None #acceleration
+        
+        self.elbow_r = None #position
+        self.elbow_l = None #position
+
+        self.DRUM_R = False #initialized motion for it
+        self.DRUM_L = False
+
+    def acceleration_update(self, skeleton): #based on acceleration, but general (do helper inside)
+        acceleration(skeleton[JointId.HandRight].y, self.hand_r_positions)
+
+    def return_gesture(self): #check accelerations, elbow positions, return motion
+        return None
+"""
+^^^leave this there for me, I'll come back to it.
+I need a list of everything I need to keep track first:
+drum: hand acceleration
+guitar: hand acceleration + elbow positions (need x coordinates of hands too)
+piano: ((maybe same as drum, but same time hands))
+^^ but also, lower volume is both hands going down, slower?
+raising volume: 
+"""
 
 
+
+
+
+N=3 #number of frames between acceleration measure
+past_positions = [None for i in range(N+1)]
+DRUM_R = False
+def acceleration(position, past_positions=past_positions):
+    instan_acceler = None 
+    
+    #Update past N positions
+    for i in range(N):
+        past_positions[i] = past_positions[i+1]
+    past_positions[N] = position
+
+    if None not in past_positions:
+        dp = position - past_positions[0]
+        instan_acceler = 900*dp/(N**2)
+
+    return instan_acceler
+
+i, T = 0, 0
 def printer(skeleton):
+    global i, T
+    i = (i + 1) % 100
+    if i == 0:
+        t = time.time()
+        print(100.0 / (t - T))
+        T = t
+    global DRUM_R 
     if skeleton is None:
-        print('oops')
+        # print('oops')
+        accel = acceleration(None)
     else:
-        print(skeleton[JointId.HandRight].y)
+        # print(skeleton[JointId.HandRight].y)
+        accel = acceleration(skeleton[JointId.HandRight].y)
+
+    #print(accel)
+
+    #What is a drump
+    if accel is not None and accel < -22.0/3:
+        DRUM_R = True
+        
+    if DRUM_R and accel > -10.0/3:
+            print("drum right")
+            DRUM_R = False
+
     sys.stdout.flush()
+"""
+you can play with parameters:
+N, and threshold values for drumps
+
+I was counting my drumps and this keeps track of allf
+for me. Give it a try! I think this gives me a first idea
+for how to develop a class to detect gestures using a few past
+positions of hands and elbows. We can talk about it when you are back
+"""
 
 if __name__ == '__main__':
     fig, ax = plt.subplots(1, 1)
