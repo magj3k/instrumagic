@@ -6,9 +6,11 @@ import ctypes
 import sys
 from threading import Timer
 import time
+import math
+import numpy as np
 
 from pykinect import nui
-from pykinect.nui import JointId, SkeletonTrackingState
+from pykinect.nui import JointId, SkeletonTrackingState, TransformSmoothParameters
 
 import pygame
 from pygame.color import THECOLORS
@@ -19,6 +21,7 @@ from matplotlib import pyplot as plt
 KINECTEVENT = pygame.USEREVENT
 DEPTH_WINSIZE = 640,480
 VIDEO_WINSIZE = 640,480
+SAMPLE_RATE = 30
 
 SKELETON_COLORS = [THECOLORS["red"], 
                    THECOLORS["blue"], 
@@ -205,6 +208,89 @@ class Kinect:
         if self.draw_skeleton:
             self.draw_skeletons(self.skeletons)
             pygame.display.update()
+
+def unit_vector(v):
+    return v / np.linalg.norm(v)
+
+def angle(u, v):
+    return np.arccos(np.clip(np.dot(unit_vector(u), unit_vector(v)), -1, 1))
+
+SAMPLE_RATE = 30
+
+class Beat:
+    def __init__(self, pos, vel):
+        self.pos = pos
+        self.vel = vel
+
+class JointModel:
+    def __init__(self):
+        self.alpha_vel = 0.8
+        self.alpha_acc = 0.8
+        self.alpha_recent_vel = 0.4
+        self.beat_vel_thresh = 0.1
+        self.beat_acc_ratio_thresh = 0.8
+        
+        self.pos = None
+        self.vel = None
+        self.acc = None
+        self.recent_vel = None
+        
+        self.beat = None
+        self.ongoing_beat_vel = None
+
+    def update(self, pos):
+        if pos is None:
+            vel = None
+            acc = None
+            recent_vel = None
+        elif self.pos is None:
+            pos = np.array([pos.x, pos.y, pos.z])
+            vel = np.zeros(3)
+            acc = np.zeros(3)
+            recent_vel = np.zeros(3)
+        else:
+            pos = np.array([pos.x, pos.y, pos.z])
+            vel = self.alpha_vel * SAMPLE_RATE * (pos - self.pos) + (1 - self.alpha_vel) * self.vel
+            acc = self.alpha_acc * SAMPLE_RATE * (vel - self.vel) + (1 - self.alpha_acc) * self.acc
+            recent_vel = self.alpha_recent_vel * vel + (1 - self.alpha_recent_vel) * self.recent_vel
+
+        if self.recent_vel is not None and acc is not None and \
+                np.linalg.norm(self.recent_vel) > self.beat_vel_thresh and \
+                np.dot(vel - self.recent_vel, -unit_vector(self.recent_vel)) > self.beat_acc_ratio_thresh * np.linalg.norm(self.recent_vel):
+            if self.ongoing_beat_vel is None or angle(self.recent_vel, self.ongoing_beat_vel) > math.pi / 2:
+                self.beat = Beat(pos, self.recent_vel)
+            else:
+                self.beat = None
+            self.ongoing_beat_vel = self.recent_vel
+        else:
+            self.beat = self.ongoing_beat_vel = None
+
+        self.pos, self.vel, self.acc, self.recent_vel = pos, vel, acc, recent_vel
+
+
+TRACKED_JOINTS = [JointId.HandRight, JointId.HandLeft]
+
+class SkeletonModel:
+    def __init__(self):
+        self.joints = {}
+        for joint in TRACKED_JOINTS:
+            self[joint] = JointModel()
+
+    def __getitem__(self, index):
+        return self.joints[index]
+
+    def __setitem__(self, index, value):
+        self.joints[index] = value
+
+    def update(self, skeleton):
+        if skeleton is None:
+            for joint in TRACKED_JOINTS:
+                self[joint].update(None)
+        else:
+            for joint in TRACKED_JOINTS:
+                self[joint].update(skeleton[joint])
+
+
 ################################################
 """DON'T TOUCH CODE ON TOP OF THIS OR CHRIS WILL..."""
 ################################################
@@ -234,7 +320,7 @@ class skeleton_acceleration:
 """
 ^^^leave this there for me, I'll come back to it.
 I need a list of everything I need to keep track first:
-drum: hand acceleration
+drum: hand acceleration - vel down, then 
 guitar: hand acceleration + elbow positions (need x coordinates of hands too)
 piano: ((maybe same as drum, but same time hands))
 ^^ but also, lower volume is both hands going down, slower?
@@ -262,14 +348,26 @@ def acceleration(position, past_positions=past_positions):
 
     return instan_acceler
 
-i, T = 0, 0
+skeleton_model = SkeletonModel()
 def printer(skeleton):
-    global i, T
-    i = (i + 1) % 100
-    if i == 0:
-        t = time.time()
-        print(100.0 / (t - T))
-        T = t
+    skeleton_model.update(skeleton)
+    audio.on_update()
+    #if skeleton_model[JointId.HandRight].vel is not None:
+     #   print(skeleton_model[JointId.HandRight].vel[1], skeleton_model[JointId.HandRight].recent_vel[1], skeleton_model[JointId.HandRight].acc[1])
+    if skeleton_model[JointId.HandRight].beat is not None and skeleton_model[JointId.HandRight].beat.vel[1] < 0:
+        print(skeleton_model[JointId.HandRight].beat.vel)
+        play_sound('tick', skeleton_model[JointId.HandRight].beat.vel)
+    else:
+        print()
+    if skeleton_model[JointId.HandLeft].beat is not None and skeleton_model[JointId.HandLeft].beat.vel[1] < 0:
+        print(skeleton_model[JointId.HandLeft].beat.vel)
+        play_sound('drums', skeleton_model[JointId.HandLeft].beat.vel)
+    #if skeleton_model[JointId.HandRight].vel is not None and np.linalg.norm(skeleton_model[JointId.HandRight].vel) > 1:
+     #   print(skeleton_model[JointId.HandRight].vel)
+    else:
+        print()
+
+    '''
     global DRUM_R 
     if skeleton is None:
         # print('oops')
@@ -287,7 +385,7 @@ def printer(skeleton):
     if DRUM_R and accel > -10.0/3:
             print("drum right")
             DRUM_R = False
-
+    '''
     sys.stdout.flush()
 """
 you can play with parameters:
@@ -298,6 +396,43 @@ for me. Give it a try! I think this gives me a first idea
 for how to develop a class to detect gestures using a few past
 positions of hands and elbows. We can talk about it when you are back
 """
+
+from common.core import *
+from common.audio import *
+from common.synth import *
+from common.gfxutil import *
+from common.clock import *
+from common.metro import *
+
+previous_note = None
+channel = 0
+audio = Audio(2)
+synth = Synth('sfx/FluidR3_GM.sf2')
+tempo_map  = SimpleTempoMap(1200)
+sched = AudioScheduler(tempo_map)
+audio.set_generator(sched)
+sched.set_generator(synth)
+
+def play_sound(instrument, vel):
+    global previous_note
+    if previous_note != None: synth.noteoff(channel, previous_note)
+
+    if instrument == "piano":
+        patch = (0, 2)
+        note = 60
+        velocity = 80
+    elif instrument == "drums":
+        patch = (128, 8)
+        note = 40
+        velocity = min(120, 50 + int(100 * np.linalg.norm(vel)))
+    elif instrument == "tick":
+        patch = (128, 0)
+        note = 37
+        velocity = min(120, 50 + int(100 * np.linalg.norm(vel)))
+    
+    synth.program(channel, patch[0], patch[1])
+    synth.noteon(channel, note, velocity)
+    previous_note = note
 
 if __name__ == '__main__':
     fig, ax = plt.subplots(1, 1)
