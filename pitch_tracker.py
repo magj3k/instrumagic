@@ -40,14 +40,14 @@ class PitchTracker(object):
                 base_note = sorted_common_pitches_and_frequencies[0]
                 print(sorted_common_pitches_and_frequencies)
 
-                if base_note[1] <= 6:
+                if base_note[1] <= 7:
                     base_note = sorted_common_pitches_and_frequencies[1]
-                if base_note[1] > 6:
+                if base_note[1] > 7:
 
                     # extracts supporting note
                     best_match = None
                     for pitch_and_freq in common_pitches_and_frequencies:
-                        if pitch_and_freq != base_note and pitch_and_freq[1] >= 5:
+                        if pitch_and_freq != base_note and pitch_and_freq[1] >= 6:
                             if best_match == None or pitch_and_freq[1] > best_match[1] and (best_match[0] == base_note[0]+3 or best_match[0] == base_note[0]+4):
                                 best_match = pitch_and_freq
 
