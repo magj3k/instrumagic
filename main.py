@@ -104,7 +104,7 @@ class MainWidget1(BaseWidget) :
                 indicator.color.r = 0.5
                 indicator.color.g = 0.5
                 indicator.color.b = 1.0
-            elif self.playbackSystem.chord_progression[0] != None:
+            elif self.playbackSystem.chord_progression[i] != None:
                 indicator.color.r = 0.15
                 indicator.color.g = 0.5
                 indicator.color.b = 0.15
