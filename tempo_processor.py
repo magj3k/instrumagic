@@ -1,3 +1,4 @@
+from math import *
 import numpy as np
 
 '''
@@ -6,7 +7,6 @@ TO CHANGE TEMPO, CALL THIS FOR EACH DOWNBEAT:
 self.tempo_processor.add_sample(timestamp, "down")
 
 '''
-
 
 class TempoProcessor(object):
     def __init__(self, change_tempo_func, tempo_map):
@@ -21,6 +21,15 @@ class TempoProcessor(object):
 
     def on_update(self, dt):
         self.t += dt
+
+    def quantize_time_to_beat(self, time, round_up=True):
+        bps = self.tempo_map.bpm/60.0
+        beat = int(ceil(time * bps))
+        if round_up == False: beat = int(round(time * bps))
+        return beat
+
+    def current_beat(self, round_up=True):
+        return int((self.quantize_time_to_beat(self.t, round_up)/4) % 4)
 
     def strong_sample_size(self):
         return len(self.previous_down_conducts) + (len(self.previous_down_conducts) * 0.5)
