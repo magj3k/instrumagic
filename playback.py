@@ -24,6 +24,9 @@ class Chord(object):
         if for_feedback == True: # plays chords in higher octaves while tracking pitch
             while pitches[0] < 62:
                 pitches[0] += 12
+        else:
+            while pitches[0] > 55:
+                pitches[0] += -12
 
         if self.type == "major":
             pitches.append(pitches[0]+4)
