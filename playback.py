@@ -57,6 +57,7 @@ class PlaybackSystem(object):
         self.t = 0
 
         self.chord_progression = [None, None, None, None]
+        self.performing = False
 
     def on_update(self, dt):
         self.t += dt
@@ -69,11 +70,14 @@ class PlaybackSystem(object):
 
             if self.current_beat % 4 == 0:
                 if measure == 0:
-                    self.play_sound("tick", 45, 90)
+                    vel = 90
                 else:
-                    self.play_sound("tick", 45, 75)
+                    vel = 75
             else:
-                self.play_sound("tick", 45, 50)
+                vel = 50
+            if self.performing == True:
+                vel = vel * 0.6
+            self.play_sound("tick", 45, vel)
 
         if self.current_measure != measure:
             previous_measure = self.current_measure
@@ -140,5 +144,13 @@ class PlaybackSystem(object):
         for pitch in pitches:
             self.performance_synth.noteon(self.channel, pitch, velocity)
         self.previous_note = pitches
+
+    def play_chord_performance(self, instrument = "piano"):
+        velocity = 95 # could be tweaked later
+
+        current_chord = self.chord_progression[int(self.current_measure % len(self.chord_progression))]
+        if current_chord != None:
+            pitches = current_chord.get_pitches(True)
+            self.play_chord(instrument, pitches, velocity)
 
 

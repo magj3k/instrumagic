@@ -70,6 +70,11 @@ class MainWidget1(BaseWidget) :
             else:
                 self.pitchTracker.tracking = False
 
+            if self.phase == 2:
+                self.playbackSystem.performing = True
+            else:
+                self.playbackSystem.performing = False
+
     def change_tempo(self, new_tempo):
         print("NEW TEMPO: "+str(new_tempo))
 
