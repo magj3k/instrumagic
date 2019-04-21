@@ -55,16 +55,20 @@ class MainWidget1(BaseWidget) :
         # phase indicator
         indicator_size = (Window.width*0.5, Window.width*0.5*117.0/853.0)
         self.phase_indicator = Obj(Rectangle(pos=((Window.width*0.5) - indicator_size[0]/2, (Window.height*0.865) - indicator_size[1]/2), size=indicator_size), (1.0, 1.0, 1.0), "graphics/signal_phase_1.png")
+        self.phase_ind_anim_x = 100
         self.canvas.add(self.phase_indicator)
 
         self.objects = [self.phase_indicator, metro_anchor, self.metro_line, self.measure_1_indicator, self.measure_2_indicator, self.measure_3_indicator, self.measure_4_indicator]
 
-        # dev, remove later
-        self.change_phase(1)
+    def on_key_down(self, keycode, modifiers):
+        print("Key pressed: "+str(keycode))
+        if keycode[0] != 27: # excluding escape key
+            self.change_phase((self.phase+1) % 3)
 
     def change_phase(self, new_phase):
         if self.phase != new_phase:
             self.phase = new_phase
+            self.phase_ind_anim_x = 0
 
             if self.phase == 1:
                 self.pitchTracker.tracking = True
@@ -81,6 +85,7 @@ class MainWidget1(BaseWidget) :
 
     def on_update(self) :
         dt = kivyClock.frametime
+        self.phase_ind_anim_x = min(self.phase_ind_anim_x+dt, 100)
 
         self.pitchTracker.on_update(dt)
         self.playbackSystem.on_update(dt)
@@ -114,6 +119,13 @@ class MainWidget1(BaseWidget) :
                 indicator.color.b = 0.25
 
         # phase indicator updates
+        if self.phase_ind_anim_x < 1.1:
+            self.phase_indicator.color.r = 0.75+(np.cos(self.phase_ind_anim_x*4*(2.0*3.14159)/1.1)*0.25)
+            self.phase_indicator.color.g = 0.75+(np.cos(self.phase_ind_anim_x*4*(2.0*3.14159)/1.1)*0.25)
+        else:
+            self.phase_indicator.color.r = 1.0
+            self.phase_indicator.color.g = 1.0
+
         if self.phase == 0:
             self.phase_indicator.change_texture("graphics/signal_phase_1.png")
         elif self.phase == 1:

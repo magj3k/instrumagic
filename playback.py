@@ -79,7 +79,7 @@ class PlaybackSystem(object):
             else:
                 vel = 50
             if self.performing == True:
-                vel = vel * 0.6
+                vel = int(vel * 0.5)
             self.play_sound("tick", 45, vel)
 
         if self.current_measure != measure:
