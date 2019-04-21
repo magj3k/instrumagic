@@ -51,7 +51,7 @@ class PitchTracker(object):
                                 best_match = pitch_and_freq
 
                     relevant_pitches.append(base_note[0])
-                    relevant_pitches.append(best_match[0])
+                    if best_match != None: relevant_pitches.append(best_match[0])
 
         self.current_pitches = []
         return relevant_pitches
