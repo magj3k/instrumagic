@@ -1,13 +1,6 @@
 from math import *
 import numpy as np
 
-'''
-
-TO CHANGE TEMPO, CALL THIS FOR EACH DOWNBEAT:
-self.tempo_processor.add_sample(timestamp, "down")
-
-'''
-
 class TempoProcessor(object):
     def __init__(self, change_tempo_func, tempo_map):
         self.previous_up_conducts = [] # as timestamps
@@ -33,6 +26,9 @@ class TempoProcessor(object):
 
     def strong_sample_size(self):
         return len(self.previous_down_conducts) + (len(self.previous_down_conducts) * 0.5)
+
+    def register_downbeat(self):
+        self.add_sample(self.t, "down")
 
     def add_sample(self, timestamp, up_or_down):
         if up_or_down == "up":
