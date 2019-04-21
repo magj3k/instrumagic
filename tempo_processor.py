@@ -1,12 +1,26 @@
 import numpy as np
 
+'''
+
+TO CHANGE TEMPO, CALL THIS FOR EACH DOWNBEAT:
+self.tempo_processor.add_sample(timestamp, "down")
+
+'''
+
+
 class TempoProcessor(object):
-    def __init__(self, change_tempo_func):
+    def __init__(self, change_tempo_func, tempo_map):
         self.previous_up_conducts = [] # as timestamps
         self.previous_down_conducts = [] # as timestamps
+        self.tempo_map = tempo_map
 
         self.clear_threshold = 2.5 # in seconds
         self.change_tempo_func = change_tempo_func
+
+        self.t = 0
+
+    def on_update(self, dt):
+        self.t += dt
 
     def strong_sample_size(self):
         return len(self.previous_down_conducts) + (len(self.previous_down_conducts) * 0.5)
@@ -26,6 +40,10 @@ class TempoProcessor(object):
                 self.previous_down_conducts.append(timestamp)
                 if len(self.previous_down_conducts) > 6:
                     self.previous_down_conducts = self.previous_down_conducts[1:]
+
+        new_tempo = self.estimate_tempo(self.tempo_map.bpm)
+        if new_tempo != None:
+            self.tempo_map.set_tempo(new_tempo, self.t)
 
     def estimate_tempo(self, reference_tempo):
         sample_size = self.strong_sample_size()

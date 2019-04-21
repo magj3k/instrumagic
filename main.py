@@ -28,8 +28,8 @@ class MainWidget1(BaseWidget) :
         self.sched.set_generator(self.synth)
         self.metro = Metronome(self.sched, self.synth)
 
-        self.tempoProcessor = TempoProcessor(self.change_tempo)
-        self.gestureRecognizer = GestureRecognizer(self.quantize_time_to_beat, self.play_sound, self.tempoProcessor, self.tempo_map)
+        self.tempoProcessor = TempoProcessor(self.change_tempo, self.tempo_map)
+        # self.gestureRecognizer = GestureRecognizer(self.quantize_time_to_beat, self.play_sound, self.tempoProcessor, self.tempo_map)
 
         self.previous_note = None
         self.metro.start()
@@ -76,7 +76,8 @@ class MainWidget1(BaseWidget) :
         self.audio.on_update()
 
         dt = kivyClock.frametime
-        self.gestureRecognizer.on_update(dt)
+        # self.gestureRecognizer.on_update(dt)
+        self.tempoProcessor.on_update(dt)
 
         # user interface updates
 

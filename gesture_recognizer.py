@@ -4,6 +4,8 @@ from leaputil import *
 import Leap
 import numpy as np
 
+# USING KINECT INSTEAD
+
 class GestureRecognizer(object):
     def __init__(self, quantize_func, play_func, tempo_processor, tempo_map):
         self.leap = Leap.Controller()
