@@ -78,7 +78,7 @@ class PlaybackSystem(object):
                     vel = 75
             else:
                 vel = 50
-            if self.performing == True:
+            if self.performing == True and beat != 0:
                 vel = int(vel * 0.5)
             self.play_sound("tick", 45, vel)
 
