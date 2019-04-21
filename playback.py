@@ -19,23 +19,28 @@ class Chord(object):
         if pitches[1] == pitches[0]+3:
             self.type = "minor"
             
-    def get_pitches(self):
+    def get_pitches(self, for_feedback):
         pitches = [self.base]
+        if for_feedback == True: # plays chords in higher octaves while tracking pitch
+            while pitches[0] < 62:
+                pitches[0] += 12
+
         if self.type == "major":
-            pitches.append(self.base+4)
-            pitches.append(self.base+7)
+            pitches.append(pitches[0]+4)
+            pitches.append(pitches[0]+7)
         elif self.type == "minor":
-            pitches.append(self.base+3)
-            pitches.append(self.base+7)
+            pitches.append(pitches[0]+3)
+            pitches.append(pitches[0]+7)
         return pitches
 
 class PlaybackSystem(object):
-    def __init__(self, audio, tempo_map, tempo_processor):
+    def __init__(self, audio, tempo_map, tempo_processor, pitch_tracker):
         self.channel = 0
 
         self.audio = audio
         self.tempo_map = tempo_map
         self.tempo_processor = tempo_processor
+        self.pitch_tracker = pitch_tracker
 
         self.mixer = Mixer()
         self.metro_synth = Synth('sfx/FluidR3_GM.sf2')
@@ -51,7 +56,7 @@ class PlaybackSystem(object):
         self.current_beat = 0
         self.t = 0
 
-        self.chord_progression = [Chord([60, 64]), Chord([55, 59]), Chord([57, 60]), Chord([65, 69])]
+        self.chord_progression = [None, None, None, None]
 
     def on_update(self, dt):
         self.t += dt
@@ -71,11 +76,25 @@ class PlaybackSystem(object):
                 self.play_sound("tick", 45, 50)
 
         if self.current_measure != measure:
+            previous_measure = self.current_measure
             self.current_measure = measure
 
-            # dev, testing chord playback
-            current_chord = self.chord_progression[int(self.current_measure % len(self.chord_progression))]
-            self.play_chord("guitar", current_chord.get_pitches(), 60)
+            # plays back recorded chords during pitch tracking
+            if self.pitch_tracker.tracking == True:
+                current_chord = self.chord_progression[int(self.current_measure % len(self.chord_progression))]
+                if current_chord != None:
+                    pitches = current_chord.get_pitches(True)
+                    self.play_chord("guitar", pitches, 50)
+
+            # updates chord progression if necessary
+            if self.pitch_tracker.tracking == True:
+                relevant_pitches = self.pitch_tracker.get_relevant_pitches_and_clear()
+                if len(relevant_pitches) > 1:
+                    # print("RELEVANT PITCHES: "+str(relevant_pitches))
+
+                    new_chord = Chord(relevant_pitches)
+                    self.chord_progression[int(previous_measure % len(self.chord_progression))] = new_chord
+                    print("NEW CHORD REGISTERED FOR MEASURE: "+str(previous_measure))
 
     def play_sound(self, instrument = "tick", pitch = 45, velocity = 75):
         patch = (128, 0)

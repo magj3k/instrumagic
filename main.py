@@ -3,6 +3,7 @@ import numpy as np
 from tempo_processor import *
 # from gesture_recognizer import *
 from playback import *
+from pitch_tracker import *
 from ui import *
 
 from common.core import *
@@ -20,11 +21,12 @@ class MainWidget1(BaseWidget) :
 
         self.phase = 0 # 0=tempo tracking, 1=pitch tracking, 2=performance
 
-        self.audio = Audio(2)
+        self.pitchTracker = PitchTracker()
+        self.audio = Audio(2, None, self.pitchTracker.audio_input_func)
         self.tempo_map  = SimpleTempoMap(100)
 
         self.tempoProcessor = TempoProcessor(self.change_tempo, self.tempo_map)
-        self.playbackSystem = PlaybackSystem(self.audio, self.tempo_map, self.tempoProcessor)
+        self.playbackSystem = PlaybackSystem(self.audio, self.tempo_map, self.tempoProcessor, self.pitchTracker)
         # self.gestureRecognizer = GestureRecognizer(self.quantize_time_to_beat, self.play_sound, self.tempoProcessor, self.tempo_map)
 
         # user interface objects
@@ -56,12 +58,25 @@ class MainWidget1(BaseWidget) :
 
         self.objects = [self.phase_indicator, metro_anchor, self.metro_line, self.measure_1_indicator, self.measure_2_indicator, self.measure_3_indicator, self.measure_4_indicator]
 
+        # dev, remove later
+        self.change_phase(1)
+
+    def change_phase(self, new_phase):
+        if self.phase != new_phase:
+            self.phase = new_phase
+
+            if self.phase == 1:
+                self.pitchTracker.tracking = True
+            else:
+                self.pitchTracker.tracking = False
+
     def change_tempo(self, new_tempo):
         print("NEW TEMPO: "+str(new_tempo))
 
     def on_update(self) :
         dt = kivyClock.frametime
 
+        self.pitchTracker.on_update(dt)
         self.playbackSystem.on_update(dt)
         # self.gestureRecognizer.on_update(dt)
         self.tempoProcessor.on_update(dt)
@@ -78,20 +93,36 @@ class MainWidget1(BaseWidget) :
         current_measure = self.tempoProcessor.current_beat(4)
         if current_measure == 0:
             self.measure_1_indicator.color = Color(0.5, 0.5, 1.0)
+        elif self.playbackSystem.chord_progression[0] != None:
+            self.measure_1_indicator.color = Color(0.15, 0.5, 0.15)
         else:
             self.measure_1_indicator.color = Color(0.25, 0.25, 0.25)
         if current_measure == 1:
             self.measure_2_indicator.color = Color(0.5, 0.5, 1.0)
+        elif self.playbackSystem.chord_progression[1] != None:
+            self.measure_2_indicator.color = Color(0.15, 0.5, 0.15)
         else:
             self.measure_2_indicator.color = Color(0.25, 0.25, 0.25)
         if current_measure == 2:
             self.measure_3_indicator.color = Color(0.5, 0.5, 1.0)
+        elif self.playbackSystem.chord_progression[2] != None:
+            self.measure_3_indicator.color = Color(0.15, 0.5, 0.15)
         else:
             self.measure_3_indicator.color = Color(0.25, 0.25, 0.25)
         if current_measure == 3:
             self.measure_4_indicator.color = Color(0.5, 0.5, 1.0)
+        elif self.playbackSystem.chord_progression[3] != None:
+            self.measure_4_indicator.color = Color(0.15, 0.5, 0.15)
         else:
             self.measure_4_indicator.color = Color(0.25, 0.25, 0.25)
+
+        # phase indicator updates
+        if self.phase == 0:
+            self.phase_indicator.change_texture("graphics/signal_phase_1.png")
+        elif self.phase == 1:
+            self.phase_indicator.change_texture("graphics/signal_phase_2.png")
+        elif self.phase == 2:
+            self.phase_indicator.change_texture("graphics/signal_phase_3.png")
 
         # generic user interface updates
         for obj in self.objects:
