@@ -21,8 +21,8 @@ class TempoProcessor(object):
         if round_up == False: beat = int(round(time * bps))
         return beat
 
-    def current_beat(self, round_up=True):
-        return int((self.quantize_time_to_beat(self.t, round_up)/4) % 4)
+    def current_beat(self, divisor=1, round_up=True):
+        return int((self.quantize_time_to_beat(self.t, round_up)/divisor) % 4)
 
     def strong_sample_size(self):
         return len(self.previous_down_conducts) + (len(self.previous_down_conducts) * 0.5)

@@ -10,7 +10,6 @@ from common.audio import *
 from common.synth import *
 from common.gfxutil import *
 from common.clock import *
-from common.metro import *
 
 from kivy.graphics import Color, Line, Rectangle
 from kivy.graphics.instructions import InstructionGroup
@@ -18,18 +17,13 @@ from kivy.graphics.instructions import InstructionGroup
 class MainWidget1(BaseWidget) :
     def __init__(self):
         super(MainWidget1, self).__init__()
-        self.channel = 0
 
         self.audio = Audio(2)
         self.synth = Synth('sfx/FluidR3_GM.sf2')
         self.tempo_map  = SimpleTempoMap(100)
-        self.sched = AudioScheduler(self.tempo_map)
-        self.audio.set_generator(self.sched)
-        self.sched.set_generator(self.synth)
-        self.metro = Metronome(self.sched, self.synth)
 
         self.tempoProcessor = TempoProcessor(self.change_tempo, self.tempo_map)
-        self.playbackSystem = PlaybackSystem(self.synth, self.audio)
+        self.playbackSystem = PlaybackSystem(self.synth, self.audio, self.tempo_map, self.tempoProcessor)
         # self.gestureRecognizer = GestureRecognizer(self.quantize_time_to_beat, self.play_sound, self.tempoProcessor, self.tempo_map)
 
         # user interface objects
@@ -56,8 +50,6 @@ class MainWidget1(BaseWidget) :
 
         self.objects = [metro_anchor, self.metro_line, self.measure_1_indicator, self.measure_2_indicator, self.measure_3_indicator, self.measure_4_indicator]
 
-        self.metro.start()
-
     def change_tempo(self, new_tempo):
         print("NEW TEMPO: "+str(new_tempo))
 
@@ -77,7 +69,7 @@ class MainWidget1(BaseWidget) :
         self.metro_line.end = ((Window.width*0.5)+x, (Window.height*0.75)-y+self.metro_offset_y)
 
         # beat indicator updates
-        current_measure = self.tempoProcessor.current_beat(False)
+        current_measure = self.tempoProcessor.current_beat(4)
         if current_measure == 0:
             self.measure_1_indicator.color = Color(0.5, 0.5, 1.0)
         else:
