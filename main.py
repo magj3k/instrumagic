@@ -50,6 +50,7 @@ class MainWidget1(BaseWidget) :
         self.canvas.add(self.measure_3_indicator)
         self.measure_4_indicator = Obj(Rectangle(pos=((Window.width*5.0/7.0) - measure_indicator_size[0]/2, (Window.height*0.825) + self.measure_offset_y - measure_indicator_size[1]/2), size=measure_indicator_size), (1.0, 1.0, 1.0), "graphics/beat_4.png")
         self.canvas.add(self.measure_4_indicator)
+        self.measure_indicators = [self.measure_1_indicator, self.measure_2_indicator, self.measure_3_indicator, self.measure_4_indicator]
 
         # phase indicator
         indicator_size = (Window.width*0.5, Window.width*0.5*117.0/853.0)
@@ -96,30 +97,21 @@ class MainWidget1(BaseWidget) :
 
         # beat indicator updates
         current_measure = self.tempoProcessor.current_beat(4)
-        if current_measure == 0:
-            self.measure_1_indicator.color = Color(0.5, 0.5, 1.0)
-        elif self.playbackSystem.chord_progression[0] != None:
-            self.measure_1_indicator.color = Color(0.15, 0.5, 0.15)
-        else:
-            self.measure_1_indicator.color = Color(0.25, 0.25, 0.25)
-        if current_measure == 1:
-            self.measure_2_indicator.color = Color(0.5, 0.5, 1.0)
-        elif self.playbackSystem.chord_progression[1] != None:
-            self.measure_2_indicator.color = Color(0.15, 0.5, 0.15)
-        else:
-            self.measure_2_indicator.color = Color(0.25, 0.25, 0.25)
-        if current_measure == 2:
-            self.measure_3_indicator.color = Color(0.5, 0.5, 1.0)
-        elif self.playbackSystem.chord_progression[2] != None:
-            self.measure_3_indicator.color = Color(0.15, 0.5, 0.15)
-        else:
-            self.measure_3_indicator.color = Color(0.25, 0.25, 0.25)
-        if current_measure == 3:
-            self.measure_4_indicator.color = Color(0.5, 0.5, 1.0)
-        elif self.playbackSystem.chord_progression[3] != None:
-            self.measure_4_indicator.color = Color(0.15, 0.5, 0.15)
-        else:
-            self.measure_4_indicator.color = Color(0.25, 0.25, 0.25)
+        for i in range(len(self.measure_indicators)):
+            indicator = self.measure_indicators[i]
+
+            if current_measure == i:
+                indicator.color.r = 0.5
+                indicator.color.g = 0.5
+                indicator.color.b = 1.0
+            elif self.playbackSystem.chord_progression[0] != None:
+                indicator.color.r = 0.15
+                indicator.color.g = 0.5
+                indicator.color.b = 0.15
+            else:
+                indicator.color.r = 0.25
+                indicator.color.g = 0.25
+                indicator.color.b = 0.25
 
         # phase indicator updates
         if self.phase == 0:
