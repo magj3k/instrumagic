@@ -38,7 +38,6 @@ class PitchTracker(object):
             # extracts base pitch first
             if len(common_pitches_and_frequencies) > 1:
                 base_note = sorted_common_pitches_and_frequencies[0]
-                print(sorted_common_pitches_and_frequencies)
 
                 if base_note[1] <= 7:
                     base_note = sorted_common_pitches_and_frequencies[1]
