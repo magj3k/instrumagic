@@ -19,11 +19,10 @@ class MainWidget1(BaseWidget) :
         super(MainWidget1, self).__init__()
 
         self.audio = Audio(2)
-        self.synth = Synth('sfx/FluidR3_GM.sf2')
         self.tempo_map  = SimpleTempoMap(100)
 
         self.tempoProcessor = TempoProcessor(self.change_tempo, self.tempo_map)
-        self.playbackSystem = PlaybackSystem(self.synth, self.audio, self.tempo_map, self.tempoProcessor)
+        self.playbackSystem = PlaybackSystem(self.audio, self.tempo_map, self.tempoProcessor)
         # self.gestureRecognizer = GestureRecognizer(self.quantize_time_to_beat, self.play_sound, self.tempoProcessor, self.tempo_map)
 
         # user interface objects

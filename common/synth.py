@@ -15,7 +15,7 @@ from .audio import Audio
 # create another kind of generator that generates audio based on the fluid
 # synth synthesizer
 class Synth(fluidsynth.Synth, object):
-    def __init__(self, filepath, gain = 0.8):
+    def __init__(self, filepath, gain = 1.0):
         super(Synth, self).__init__(gain, samplerate=Audio.sample_rate)
         self.sfid = self.sfload(filepath)
         if self.sfid == -1:
