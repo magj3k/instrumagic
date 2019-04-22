@@ -267,6 +267,27 @@ class JointModel:
 
         self.pos, self.vel, self.acc, self.recent_vel = pos, vel, acc, recent_vel
 
+    def downbeat(self):
+        return self.beat is not None and -self.beat.vel[1] >= np.max(np.abs(self.beat.vel))
+
+    def upbeat(self):
+        return self.beat is not None and self.beat.vel[1] >= np.max(np.abs(self.beat.vel))
+
+    def rightbeat(self):
+        return self.beat is not None and self.beat.vel[0] >= np.max(np.abs(self.beat.vel))
+
+    def leftbeat(self):
+        return self.beat is not None and -self.beat.vel[0] >= np.max(np.abs(self.beat.vel))
+
+    def frontbeat(self):
+        return self.beat is not None and -self.beat.vel[2] >= np.max(np.abs(self.beat.vel))
+
+    def backbeat(self):
+        return self.beat is not None and self.beat.vel[2] >= np.max(np.abs(self.beat.vel))
+
+    def active(self):
+        return (self.vel is not None and np.linalg.norm(self.vel) > 0.2) or (self.recent_vel is not None and np.linalg.norm(self.recent_vel) > 0.2)
+
 
 TRACKED_JOINTS = [JointId.HandRight, JointId.HandLeft]
 
@@ -352,21 +373,61 @@ skeleton_model = SkeletonModel()
 def printer(skeleton):
     skeleton_model.update(skeleton)
     audio.on_update()
-    #if skeleton_model[JointId.HandRight].vel is not None:
-     #   print(skeleton_model[JointId.HandRight].vel[1], skeleton_model[JointId.HandRight].recent_vel[1], skeleton_model[JointId.HandRight].acc[1])
+
+    if skeleton is None:
+        return
+    elif (skeleton_model[JointId.HandRight].downbeat() or skeleton_model[JointId.HandLeft].downbeat()) and \
+            skeleton_model[JointId.HandRight].ongoing_beat_vel is not None and skeleton_model[JointId.HandLeft].ongoing_beat_vel is not None and \
+            abs(skeleton[JointId.HandRight].y - skeleton[JointId.HandLeft].y) < 0.2:
+        print('PPPPPPPPPPPPPPPPPPPPPPPPP')
+        play_sound('piano', (skeleton_model[JointId.HandRight].ongoing_beat_vel + skeleton_model[JointId.HandLeft].ongoing_beat_vel) / 2)
+    elif not skeleton_model[JointId.HandLeft].active() and \
+                skeleton[JointId.HandLeft].x - skeleton[JointId.ShoulderLeft].x < -0.02 and skeleton[JointId.HandLeft].y - skeleton[JointId.ShoulderLeft].y > -0.05:
+        if (skeleton_model[JointId.HandRight].downbeat() or skeleton_model[JointId.HandRight].upbeat()) and \
+                abs(skeleton[JointId.HandRight].x - skeleton[JointId.HipCenter].x) < 0.4 and abs(skeleton[JointId.HandRight].y - skeleton[JointId.HipCenter].y) < 0.4:
+            print('-------------------------')
+            play_sound('guitar', skeleton_model[JointId.HandRight].beat.vel)
+    elif not skeleton_model[JointId.HandLeft].active() and \
+                skeleton[JointId.HandRight].x - skeleton[JointId.ShoulderRight].x > 0.02 and skeleton[JointId.HandRight].y - skeleton[JointId.ShoulderRight].y > -0.05:
+        if (skeleton_model[JointId.HandLeft].downbeat() or skeleton_model[JointId.HandLeft].upbeat()) and \
+                abs(skeleton[JointId.HandLeft].x - skeleton[JointId.HipCenter].x) < 0.4 and abs(skeleton[JointId.HandLeft].y - skeleton[JointId.HipCenter].y) < 0.4:
+            print('-------------------------')
+            play_sound('guitar', skeleton_model[JointId.HandLeft].beat.vel)
+    else:
+        if skeleton_model[JointId.HandRight].downbeat():
+            play_sound('bass drums', skeleton_model[JointId.HandRight].beat.vel)
+        if skeleton_model[JointId.HandLeft].downbeat():
+            play_sound('bass drums', skeleton_model[JointId.HandLeft].beat.vel)
+        if skeleton_model[JointId.HandRight].frontbeat():
+            play_sound('drums', skeleton_model[JointId.HandRight].beat.vel)
+        if skeleton_model[JointId.HandLeft].frontbeat():
+            play_sound('drums', skeleton_model[JointId.HandLeft].beat.vel)
+        if skeleton_model[JointId.HandRight].rightbeat():
+            play_sound('tick', skeleton_model[JointId.HandRight].beat.vel)
+        if skeleton_model[JointId.HandLeft].leftbeat():
+            play_sound('tick', skeleton_model[JointId.HandLeft].beat.vel)
+
+
+    '''
+    if skeleton_model[JointId.HandRight].vel is not None:
+        pass
+        #print(skeleton_model[JointId.HandRight].vel[1], skeleton_model[JointId.HandRight].recent_vel[1], skeleton_model[JointId.HandRight].acc[1])
     if skeleton_model[JointId.HandRight].beat is not None and skeleton_model[JointId.HandRight].beat.vel[1] < 0:
-        print(skeleton_model[JointId.HandRight].beat.vel)
+        #print(skeleton_model[JointId.HandRight].beat.vel)
         play_sound('tick', skeleton_model[JointId.HandRight].beat.vel)
     else:
+        pass
         print()
     if skeleton_model[JointId.HandLeft].beat is not None and skeleton_model[JointId.HandLeft].beat.vel[1] < 0:
-        print(skeleton_model[JointId.HandLeft].beat.vel)
+        #pass
+        #print(skeleton_model[JointId.HandLeft].beat.vel)
         play_sound('drums', skeleton_model[JointId.HandLeft].beat.vel)
     #if skeleton_model[JointId.HandRight].vel is not None and np.linalg.norm(skeleton_model[JointId.HandRight].vel) > 1:
      #   print(skeleton_model[JointId.HandRight].vel)
     else:
-        print()
-
+        pass
+        #print()
+    '''
     '''
     global DRUM_R 
     if skeleton is None:
@@ -420,7 +481,11 @@ def play_sound(instrument, vel):
     if instrument == "piano":
         patch = (0, 2)
         note = 60
-        velocity = 80
+        velocity = min(120, 50 + int(100 * np.linalg.norm(vel)))
+    if instrument == "guitar":
+        patch = (0, 26)
+        note = 60
+        velocity = min(120, 50 + int(100 * np.linalg.norm(vel)))
     elif instrument == "drums":
         patch = (128, 8)
         note = 40
@@ -428,6 +493,10 @@ def play_sound(instrument, vel):
     elif instrument == "tick":
         patch = (128, 0)
         note = 37
+        velocity = min(120, 50 + int(100 * np.linalg.norm(vel)))
+    elif instrument == "bass drums":
+        patch = (8, 116)
+        note = 20
         velocity = min(120, 50 + int(100 * np.linalg.norm(vel)))
     
     synth.program(channel, patch[0], patch[1])

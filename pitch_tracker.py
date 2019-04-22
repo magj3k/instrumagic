@@ -7,7 +7,7 @@ A4 = 440
 C0 = A4*pow(2, -4.75)
     
 def freq_to_pitch(freq):
-    h = round(12*log2(max(freq, 0.00001)/(max(C0, 0.00001))))
+    h = round(12*log(max(freq, 0.00001)/(max(C0, 0.00001)), 2))
     return h
 
 class PitchTracker(object):
@@ -71,7 +71,7 @@ class PitchTracker(object):
                     self.all_frames.extend(sample[0])
 
                 avg_volume = np.mean(np.absolute(self.all_frames))
-                if avg_volume > 0.05: # tracks current pitch if volume is loud enough
+                if avg_volume > 0.01: # tracks current pitch if volume is loud enough
 
                     aubio_samples = np.array(self.all_frames[-1024:], dtype=aubio.float_type)
                     if len(aubio_samples) >= 1024:

@@ -142,10 +142,10 @@ class PlaybackSystem(object):
 
         if self.previous_note != None:
             for previous_note in self.previous_note:
-                self.performance_synth.noteoff(self.channel, previous_note)
+                self.performance_synth.noteoff(self.channel, int(previous_note))
         self.performance_synth.program(self.channel, patch[0], patch[1])
         for pitch in pitches:
-            self.performance_synth.noteon(self.channel, pitch, velocity)
+            self.performance_synth.noteon(self.channel, int(pitch), int(velocity))
         self.previous_note = pitches
 
     def play_chord_performance(self, instrument = "piano"):
