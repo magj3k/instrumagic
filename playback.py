@@ -97,11 +97,10 @@ class PlaybackSystem(object):
             if self.pitch_tracker.tracking == True:
                 relevant_pitches = self.pitch_tracker.get_relevant_pitches_and_clear()
                 if len(relevant_pitches) > 1:
-                    # print("RELEVANT PITCHES: "+str(relevant_pitches))
-
                     new_chord = Chord(relevant_pitches)
                     self.chord_progression[int(previous_measure % len(self.chord_progression))] = new_chord
                     print("NEW CHORD REGISTERED FOR MEASURE: "+str(previous_measure))
+                    print("   RELEVANT PITCHES: "+str(relevant_pitches))
 
     def play_sound(self, instrument = "tick", pitch = 45, velocity = 75):
         patch = (128, 0)
