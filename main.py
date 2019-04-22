@@ -80,11 +80,11 @@ class MainWidget1(BaseWidget) :
             if self.skeleton[JointId.HandRight].downbeat() and self.time_since_downbeat > 6:
                 self.tempoProcessor.register_downbeat()
                 self.time_since_downbeat = 0
-                print('BBBBBBBBBBBBBBBBBBBBB')
+                #print('BBBBBBBBBBBBBBBBBBBBB')
             else:
                 self.time_since_downbeat += 1
-                print()
-            sys.stdout.flush()
+                #print()
+            #sys.stdout.flush()
         elif self.phase == 1:
             self.time_since_downbeat = 0
         elif self.phase == 2:

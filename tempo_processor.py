@@ -1,5 +1,7 @@
 from math import *
 import numpy as np
+import sys
+from common.clock import kTicksPerQuarter
 
 class TempoProcessor(object):
     def __init__(self, change_tempo_func, tempo_map):
@@ -12,8 +14,17 @@ class TempoProcessor(object):
 
         self.t = 0
 
+        self.beat_count = None
+        self.beat = 0
+
     def on_update(self, dt):
         self.t += dt
+        beat_count = int(float(self.tempo_map.time_to_tick(self.t)) / kTicksPerQuarter)
+        if self.beat_count is None:
+            self.beat_count = beat_count
+        elif beat_count > self.beat_count:
+            self.beat_count = beat_count
+            self.beat = (self.beat + 1) % 16
 
     def quantize_time_to_beat(self, time, round_up=True):
         bps = self.tempo_map.bpm/60.0
@@ -22,7 +33,8 @@ class TempoProcessor(object):
         return beat
 
     def current_beat(self, divisor=1, round_up=True):
-        return int((self.quantize_time_to_beat(self.t, round_up)/divisor) % 4)
+        return self.beat // divisor
+        #return int((self.quantize_time_to_beat(self.t, round_up)/divisor) % 4)
 
     def strong_sample_size(self):
         return len(self.previous_down_conducts) + (len(self.previous_down_conducts) * 0.5)
