@@ -97,11 +97,10 @@ class PlaybackSystem(object):
             if self.pitch_tracker.tracking == True:
                 relevant_pitches = self.pitch_tracker.get_relevant_pitches_and_clear()
                 if len(relevant_pitches) > 1:
-                    # print("RELEVANT PITCHES: "+str(relevant_pitches))
-
                     new_chord = Chord(relevant_pitches)
                     self.chord_progression[int(previous_measure % len(self.chord_progression))] = new_chord
                     print("NEW CHORD REGISTERED FOR MEASURE: "+str(previous_measure))
+                    print("   RELEVANT PITCHES: "+str(relevant_pitches))
 
     def play_sound(self, instrument = "tick", pitch = 45, velocity = 75):
         patch = (128, 0)
@@ -151,7 +150,12 @@ class PlaybackSystem(object):
     def play_chord_performance(self, instrument = "piano", velocity = 95):
         velocity = volume_for(instrument, velocity)
 
+        beat = self.tempo_processor.current_beat()
+        subbeat = self.tempo_processor.current_beat(0.25)
+
         current_chord = self.chord_progression[int(self.current_measure % len(self.chord_progression))]
+        if beat == len(self.chord_progression)-1 and subbeat == len(self.chord_progression)-1:
+            current_chord = self.chord_progression[int((self.current_measure+1) % len(self.chord_progression))]
         if current_chord != None:
             pitches = current_chord.get_pitches(True)
             self.play_chord(instrument, pitches, velocity)
