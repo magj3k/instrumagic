@@ -149,15 +149,17 @@ class PlaybackSystem(object):
         self.previous_note = pitches
 
     def play_chord_performance(self, instrument = "piano", velocity = 95):
-        velocity = volume_for(velocity)
+        velocity = volume_for(instrument, velocity)
 
         current_chord = self.chord_progression[int(self.current_measure % len(self.chord_progression))]
         if current_chord != None:
             pitches = current_chord.get_pitches(True)
             self.play_chord(instrument, pitches, velocity)
 
-def volume_for(vel):
+def volume_for(instrument, vel):
     if type(vel) is int:
         return vel
     else:
-        return min(50 + int(100 * np.linalg.norm(vel)), 120)
+        if instrument == 'guitar':
+            return min(60 + int(10 * np.linalg.norm(vel)), 70)
+        return min(30 + int(30 * np.linalg.norm(vel)), 80)
