@@ -25,7 +25,7 @@ class Chord(object):
             while pitches[0] < 62:
                 pitches[0] += 12
         else:
-            while pitches[0] > 48: #55
+            while pitches[0] > 60:
                 pitches[0] += -12
 
         if self.type == "major":
@@ -157,7 +157,7 @@ class PlaybackSystem(object):
         if beat == len(self.chord_progression)-1 and subbeat == len(self.chord_progression)-1:
             current_chord = self.chord_progression[int((self.current_measure+1) % len(self.chord_progression))]
         if current_chord != None:
-            pitches = current_chord.get_pitches(True)
+            pitches = current_chord.get_pitches(False)
             self.play_chord(instrument, pitches, velocity)
 
 def volume_for(instrument, vel):

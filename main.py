@@ -5,6 +5,7 @@ from tempo_processor import *
 from playback import *
 from pitch_tracker import *
 from ui import *
+import sys
 
 from common.core import *
 from common.audio import *
@@ -68,12 +69,26 @@ class MainWidget1(BaseWidget) :
         self.skeleton = SkeletonModel()
         self.kinect.start()
 
+        self.time_since_downbeat = 0
+
     def on_kinect_update(self, skeleton):
         self.skeleton.update(skeleton)
         if skeleton is None:
             return
         
-        if self.phase == 2:
+        if self.phase == 0:
+            if self.skeleton[JointId.HandRight].downbeat() and self.time_since_downbeat > 6:
+                self.tempoProcessor.register_downbeat()
+                self.time_since_downbeat = 0
+                print('BBBBBBBBBBBBBBBBBBBBB')
+            else:
+                self.time_since_downbeat += 1
+                print()
+            sys.stdout.flush()
+        elif self.phase == 1:
+            self.time_since_downbeat = 0
+        elif self.phase == 2:
+            self.time_since_downbeat = 0
             if (self.skeleton[JointId.HandRight].downbeat() or self.skeleton[JointId.HandLeft].downbeat()) and \
                     self.skeleton[JointId.HandRight].ongoing_beat_vel is not None and self.skeleton[JointId.HandLeft].ongoing_beat_vel is not None and \
                     abs(skeleton[JointId.HandRight].y - skeleton[JointId.HandLeft].y) < 0.2:
