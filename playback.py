@@ -103,11 +103,17 @@ class PlaybackSystem(object):
                     print("   RELEVANT PITCHES: "+str(relevant_pitches))
 
     def play_sound(self, instrument = "tick", pitch = 45, velocity = 75):
+        velocity = volume_for(instrument, velocity)
+
         patch = (128, 0)
         if instrument == "piano":
             patch = (0, 2)
         elif instrument == "drums":
             patch = (128, 8)
+        elif instrument == "bass drums":
+            patch = (8, 116)
+        elif instrument == "toms":
+            patch = (8, 117)
 
         if instrument == "tick":
             if self.previous_note_metro != None:
