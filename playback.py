@@ -130,6 +130,7 @@ class PlaybackSystem(object):
             self.performance_synth.noteon(self.channel, int(pitch), int(velocity))
             self.previous_note = [pitch]
 
+    # this function should be reserved for the metronome
     def play_chord(self, instrument = "piano", pitches = [], velocity = 80):
         patch = (0, 2)
         if instrument == "clav":
@@ -153,6 +154,7 @@ class PlaybackSystem(object):
             self.performance_synth.noteon(self.channel, int(pitch), int(velocity))
         self.previous_note = pitches
 
+    # call this for all non-metronome sounds
     def play_chord_performance(self, instrument = "piano", velocity = 95):
         velocity = volume_for(instrument, velocity)
 
@@ -173,3 +175,5 @@ def volume_for(instrument, vel):
         if instrument == 'guitar':
             return 70 #min(60 + int(10 * np.linalg.norm(vel)), 70)
         return min(30 + int(30 * np.linalg.norm(vel)), 80)
+
+        
