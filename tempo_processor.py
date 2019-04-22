@@ -24,7 +24,7 @@ class TempoProcessor(object):
             self.beat_count = beat_count
         elif beat_count > self.beat_count:
             self.beat_count = beat_count
-            self.beat = (self.beat + 1) % 16
+            self.beat += 1
 
     def quantize_time_to_beat(self, time, round_up=True):
         bps = self.tempo_map.bpm/60.0
@@ -33,7 +33,7 @@ class TempoProcessor(object):
         return beat
 
     def current_beat(self, divisor=1, round_up=True):
-        return self.beat // divisor
+        return (self.beat // divisor) % 4
         #return int((self.quantize_time_to_beat(self.t, round_up)/divisor) % 4)
 
     def strong_sample_size(self):
