@@ -25,7 +25,7 @@ class Chord(object):
             while pitches[0] < 62:
                 pitches[0] += 12
         else:
-            while pitches[0] > 55:
+            while pitches[0] > 48: #55
                 pitches[0] += -12
 
         if self.type == "major":
@@ -148,12 +148,16 @@ class PlaybackSystem(object):
             self.performance_synth.noteon(self.channel, int(pitch), int(velocity))
         self.previous_note = pitches
 
-    def play_chord_performance(self, instrument = "piano"):
-        velocity = 95 # could be tweaked later
+    def play_chord_performance(self, instrument = "piano", velocity = 95):
+        velocity = volume_for(velocity)
 
         current_chord = self.chord_progression[int(self.current_measure % len(self.chord_progression))]
         if current_chord != None:
             pitches = current_chord.get_pitches(True)
             self.play_chord(instrument, pitches, velocity)
 
-
+def volume_for(vel):
+    if type(vel) is int:
+        return vel
+    else:
+        return min(50 + int(100 * np.linalg.norm(vel)), 120)
