@@ -93,17 +93,17 @@ class MainWidget1(BaseWidget) :
             self.time_since_downbeat = 0
             if (self.skeleton[JointId.HandRight].downbeat() or self.skeleton[JointId.HandLeft].downbeat()) and \
                     self.skeleton[JointId.HandRight].ongoing_beat_vel is not None and self.skeleton[JointId.HandLeft].ongoing_beat_vel is not None and \
-                    abs(skeleton[JointId.HandRight].y - skeleton[JointId.HandLeft].y) < 0.2:
+                    abs(skeleton[JointId.HandRight].y - skeleton[JointId.HandLeft].y) < 0.1:
                 print('PPPPPPPPPPPPPPPPPPPPPPPPP')
                 self.playbackSystem.play_chord_performance('piano', (self.skeleton[JointId.HandRight].ongoing_beat_vel + self.skeleton[JointId.HandLeft].ongoing_beat_vel) / 2)
-            elif not self.skeleton[JointId.HandLeft].active() and \
-                        skeleton[JointId.HandLeft].x - skeleton[JointId.ShoulderLeft].x < -0.02 and skeleton[JointId.HandLeft].y - skeleton[JointId.ShoulderLeft].y > -0.05:
+            elif skeleton[JointId.HandLeft].x - skeleton[JointId.ShoulderLeft].x < -0.02 and skeleton[JointId.HandLeft].y - skeleton[JointId.ShoulderLeft].y > -0.05 and \
+                    skeleton[JointId.HandLeft].y - skeleton[JointId.HandRight].y > 0.1:
                 if (self.skeleton[JointId.HandRight].downbeat() or self.skeleton[JointId.HandRight].upbeat()) and \
                         abs(skeleton[JointId.HandRight].x - skeleton[JointId.HipCenter].x) < 0.4 and abs(skeleton[JointId.HandRight].y - skeleton[JointId.HipCenter].y) < 0.4:
                     print('-------------------------')
                     self.playbackSystem.play_chord_performance('guitar', self.skeleton[JointId.HandRight].beat.vel)
-            elif not self.skeleton[JointId.HandLeft].active() and \
-                        skeleton[JointId.HandRight].x - skeleton[JointId.ShoulderRight].x > 0.02 and skeleton[JointId.HandRight].y - skeleton[JointId.ShoulderRight].y > -0.05:
+            elif skeleton[JointId.HandRight].x - skeleton[JointId.ShoulderRight].x > 0.02 and skeleton[JointId.HandRight].y - skeleton[JointId.ShoulderRight].y > -0.05 and \
+                    skeleton[JointId.HandRight].y - skeleton[JointId.HandLeft].y > 0.1:
                 if (self.skeleton[JointId.HandLeft].downbeat() or self.skeleton[JointId.HandLeft].upbeat()) and \
                         abs(skeleton[JointId.HandLeft].x - skeleton[JointId.HipCenter].x) < 0.4 and abs(skeleton[JointId.HandLeft].y - skeleton[JointId.HipCenter].y) < 0.4:
                     print('-------------------------')
