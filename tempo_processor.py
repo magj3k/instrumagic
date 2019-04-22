@@ -33,8 +33,8 @@ class TempoProcessor(object):
         return beat
 
     def current_beat(self, divisor=1, round_up=True):
-        return self.beat // divisor
-        #return int((self.quantize_time_to_beat(self.t, round_up)/divisor) % 4)
+        # return self.beat // divisor
+        return int((self.quantize_time_to_beat(self.t, round_up)/divisor) % 4)
 
     def strong_sample_size(self):
         return len(self.previous_down_conducts) + (len(self.previous_down_conducts) * 0.5)
