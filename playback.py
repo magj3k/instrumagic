@@ -165,5 +165,5 @@ def volume_for(instrument, vel):
         return vel
     else:
         if instrument == 'guitar':
-            return min(60 + int(10 * np.linalg.norm(vel)), 70)
+            return 70 #min(60 + int(10 * np.linalg.norm(vel)), 70)
         return min(30 + int(30 * np.linalg.norm(vel)), 80)

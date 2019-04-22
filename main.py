@@ -64,12 +64,13 @@ class MainWidget1(BaseWidget) :
 
         self.objects = [self.phase_indicator, metro_anchor, self.metro_line, self.measure_1_indicator, self.measure_2_indicator, self.measure_3_indicator, self.measure_4_indicator]
 
-        self.kinect = Kinect(1)
+        self.kinect = Kinect(1, True)
         self.kinect.add_listener(self.on_kinect_update)
         self.skeleton = SkeletonModel()
-        self.kinect.start()
 
         self.time_since_downbeat = 0
+
+        self.kinect.start()
 
     def on_kinect_update(self, skeleton):
         self.skeleton.update(skeleton)
@@ -80,13 +81,14 @@ class MainWidget1(BaseWidget) :
             if self.skeleton[JointId.HandRight].downbeat() and self.time_since_downbeat > 6:
                 self.tempoProcessor.register_downbeat()
                 self.time_since_downbeat = 0
-                #print('BBBBBBBBBBBBBBBBBBBBB')
             else:
                 self.time_since_downbeat += 1
-                #print()
-            #sys.stdout.flush()
+                if self.skeleton[JointId.HandLeft].rightbeat() and self.skeleton[JointId.HandLeft].vel[0] > 0.1:
+                    self.change_phase(1)
         elif self.phase == 1:
             self.time_since_downbeat = 0
+            if self.skeleton[JointId.HandLeft].rightbeat() and self.skeleton[JointId.HandLeft].vel[0] > 0.1:
+                self.change_phase(2)
         elif self.phase == 2:
             self.time_since_downbeat = 0
             if (self.skeleton[JointId.HandRight].downbeat() or self.skeleton[JointId.HandLeft].downbeat()) and \
