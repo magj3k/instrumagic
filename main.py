@@ -15,6 +15,9 @@ from common.clock import *
 from kivy.graphics import Color, Line, Rectangle
 from kivy.graphics.instructions import InstructionGroup
 
+from kinect import Kinect, SkeletonModel
+from pykinect.nui import JointId
+
 class MainWidget1(BaseWidget) :
     def __init__(self):
         super(MainWidget1, self).__init__()
@@ -59,6 +62,48 @@ class MainWidget1(BaseWidget) :
         self.canvas.add(self.phase_indicator)
 
         self.objects = [self.phase_indicator, metro_anchor, self.metro_line, self.measure_1_indicator, self.measure_2_indicator, self.measure_3_indicator, self.measure_4_indicator]
+
+        self.kinect = Kinect(1)
+        self.kinect.add_listener(self.on_kinect_update)
+        self.skeleton = SkeletonModel()
+        self.kinect.start()
+
+    def on_kinect_update(self, skeleton):
+        self.skeleton.update(skeleton)
+        if skeleton is None:
+            return
+        
+        if self.phase == 2:
+            if (self.skeleton[JointId.HandRight].downbeat() or self.skeleton[JointId.HandLeft].downbeat()) and \
+                    self.skeleton[JointId.HandRight].ongoing_beat_vel is not None and self.skeleton[JointId.HandLeft].ongoing_beat_vel is not None and \
+                    abs(skeleton[JointId.HandRight].y - skeleton[JointId.HandLeft].y) < 0.2:
+                print('PPPPPPPPPPPPPPPPPPPPPPPPP')
+                self.playbackSystem.play_chord_performance('piano', (self.skeleton[JointId.HandRight].ongoing_beat_vel + self.skeleton[JointId.HandLeft].ongoing_beat_vel) / 2)
+            elif not self.skeleton[JointId.HandLeft].active() and \
+                        skeleton[JointId.HandLeft].x - skeleton[JointId.ShoulderLeft].x < -0.02 and skeleton[JointId.HandLeft].y - skeleton[JointId.ShoulderLeft].y > -0.05:
+                if (self.skeleton[JointId.HandRight].downbeat() or self.skeleton[JointId.HandRight].upbeat()) and \
+                        abs(skeleton[JointId.HandRight].x - skeleton[JointId.HipCenter].x) < 0.4 and abs(skeleton[JointId.HandRight].y - skeleton[JointId.HipCenter].y) < 0.4:
+                    print('-------------------------')
+                    self.playbackSystem.play_chord_performance('guitar', self.skeleton[JointId.HandRight].beat.vel)
+            elif not self.skeleton[JointId.HandLeft].active() and \
+                        skeleton[JointId.HandRight].x - skeleton[JointId.ShoulderRight].x > 0.02 and skeleton[JointId.HandRight].y - skeleton[JointId.ShoulderRight].y > -0.05:
+                if (self.skeleton[JointId.HandLeft].downbeat() or self.skeleton[JointId.HandLeft].upbeat()) and \
+                        abs(skeleton[JointId.HandLeft].x - skeleton[JointId.HipCenter].x) < 0.4 and abs(skeleton[JointId.HandLeft].y - skeleton[JointId.HipCenter].y) < 0.4:
+                    print('-------------------------')
+                    self.playbackSystem.play_chord_performance('guitar', self.skeleton[JointId.HandLeft].beat.vel)
+            elif False:
+                if self.skeleton[JointId.HandRight].downbeat():
+                    self.playbackSystem.play_chord_performance('bass drums', self.skeleton[JointId.HandRight].beat.vel)
+                if self.skeleton[JointId.HandLeft].downbeat():
+                    self.playbackSystem.play_chord_performance('bass drums', self.skeleton[JointId.HandLeft].beat.vel)
+                if self.skeleton[JointId.HandRight].frontbeat():
+                    self.playbackSystem.play_chord_performance('drums', self.skeleton[JointId.HandRight].beat.vel)
+                if self.skeleton[JointId.HandLeft].frontbeat():
+                    self.playbackSystem.play_chord_performance('drums', self.skeleton[JointId.HandLeft].beat.vel)
+                if self.skeleton[JointId.HandRight].rightbeat():
+                    self.playbackSystem.play_chord_performance('tick', self.skeleton[JointId.HandRight].beat.vel)
+                if self.skeleton[JointId.HandLeft].leftbeat():
+                    self.playbackSystem.play_chord_performance('tick', self.skeleton[JointId.HandLeft].beat.vel)
 
     def on_key_down(self, keycode, modifiers):
         print("Key pressed: "+str(keycode))
