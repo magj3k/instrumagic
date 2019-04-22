@@ -19,6 +19,9 @@ from kivy.graphics.instructions import InstructionGroup
 from kinect import Kinect, SkeletonModel
 from pykinect.nui import JointId
 
+MIN_TIME_FOR_INSTRUMENT_CHANGE = 15
+SHORTER_MIN_TIME_FOR_INSTRUMENT_CHANGE = 10
+
 class MainWidget1(BaseWidget) :
     def __init__(self):
         super(MainWidget1, self).__init__()
@@ -69,6 +72,8 @@ class MainWidget1(BaseWidget) :
         self.skeleton = SkeletonModel()
 
         self.time_since_downbeat = 0
+        self.last_instrument = None
+        self.time_since_last_instrument = 0
 
         self.kinect.start()
 
@@ -91,36 +96,51 @@ class MainWidget1(BaseWidget) :
                 self.change_phase(2)
         elif self.phase == 2:
             self.time_since_downbeat = 0
-            if (self.skeleton[JointId.HandRight].downbeat() or self.skeleton[JointId.HandLeft].downbeat()) and \
+            self.time_since_last_instrument += 1
+            if (self.last_instrument == 'piano' or self.time_since_last_instrument > SHORTER_MIN_TIME_FOR_INSTRUMENT_CHANGE) and \
+                    (self.skeleton[JointId.HandRight].downbeat() or self.skeleton[JointId.HandLeft].downbeat()) and \
                     self.skeleton[JointId.HandRight].ongoing_beat_vel is not None and self.skeleton[JointId.HandLeft].ongoing_beat_vel is not None and \
                     abs(skeleton[JointId.HandRight].y - skeleton[JointId.HandLeft].y) < 0.1:
                 print('PPPPPPPPPPPPPPPPPPPPPPPPP')
                 self.playbackSystem.play_chord_performance('piano', (self.skeleton[JointId.HandRight].ongoing_beat_vel + self.skeleton[JointId.HandLeft].ongoing_beat_vel) / 2)
-            elif skeleton[JointId.HandLeft].x - skeleton[JointId.ShoulderLeft].x < -0.02 and skeleton[JointId.HandLeft].y - skeleton[JointId.ShoulderLeft].y > -0.05 and \
+                self.last_instrument, self.time_since_last_instrument = 'piano', 0
+            elif (self.last_instrument == 'guitar' or self.time_since_last_instrument > SHORTER_MIN_TIME_FOR_INSTRUMENT_CHANGE) and \
+                    skeleton[JointId.HandLeft].x - skeleton[JointId.ShoulderLeft].x < -0.02 and skeleton[JointId.HandLeft].y - skeleton[JointId.ShoulderLeft].y > -0.05 and \
                     skeleton[JointId.HandLeft].y - skeleton[JointId.HandRight].y > 0.1 and \
                     abs(skeleton[JointId.HandRight].x - skeleton[JointId.HipCenter].x) < 0.2 and abs(skeleton[JointId.HandRight].y - skeleton[JointId.HipCenter].y) < 0.4:
                 if self.skeleton[JointId.HandRight].downbeat() or self.skeleton[JointId.HandRight].upbeat():
                     print('-------------------------')
                     self.playbackSystem.play_chord_performance('guitar', self.skeleton[JointId.HandRight].beat.vel)
-            elif skeleton[JointId.HandRight].x - skeleton[JointId.ShoulderRight].x > 0.02 and skeleton[JointId.HandRight].y - skeleton[JointId.ShoulderRight].y > -0.05 and \
+                    self.last_instrument, self.time_since_last_instrument = 'guitar', 0
+            elif (self.last_instrument == 'guitar' or self.time_since_last_instrument > SHORTER_MIN_TIME_FOR_INSTRUMENT_CHANGE) and \
+                    skeleton[JointId.HandRight].x - skeleton[JointId.ShoulderRight].x > 0.02 and skeleton[JointId.HandRight].y - skeleton[JointId.ShoulderRight].y > -0.05 and \
                     skeleton[JointId.HandRight].y - skeleton[JointId.HandLeft].y > 0.1 and \
                     abs(skeleton[JointId.HandLeft].x - skeleton[JointId.HipCenter].x) < 0.2 and abs(skeleton[JointId.HandLeft].y - skeleton[JointId.HipCenter].y) < 0.4:
                 if self.skeleton[JointId.HandLeft].downbeat() or self.skeleton[JointId.HandLeft].upbeat():
                     print('-------------------------')
                     self.playbackSystem.play_chord_performance('guitar', self.skeleton[JointId.HandLeft].beat.vel)
+                    self.last_instrument, self.time_since_last_instrument = 'guitar', 0
             else:
-                if self.skeleton[JointId.HandRight].downbeat():
+                if (self.last_instrument == 'drums' or self.time_since_last_instrument > MIN_TIME_FOR_INSTRUMENT_CHANGE) and self.skeleton[JointId.HandRight].downbeat():
                     self.playbackSystem.play_sound('bass drums', 25, self.skeleton[JointId.HandRight].beat.vel)
-                if self.skeleton[JointId.HandLeft].downbeat():
+                    self.last_instrument, self.time_since_last_instrument = 'drums', 0
+                if (self.last_instrument == 'drums' or self.time_since_last_instrument > MIN_TIME_FOR_INSTRUMENT_CHANGE) and self.skeleton[JointId.HandLeft].downbeat():
                     self.playbackSystem.play_sound('bass drums', 20, self.skeleton[JointId.HandLeft].beat.vel)
-                if self.skeleton[JointId.HandRight].frontbeat():
+                    self.last_instrument, self.time_since_last_instrument = 'drums', 0
+                if (self.last_instrument == 'drums' or self.time_since_last_instrument > MIN_TIME_FOR_INSTRUMENT_CHANGE) and self.skeleton[JointId.HandRight].frontbeat():
                     self.playbackSystem.play_sound('toms', 55, self.skeleton[JointId.HandRight].beat.vel)
-                if self.skeleton[JointId.HandLeft].frontbeat():
+                    self.last_instrument, self.time_since_last_instrument = 'drums', 0
+                if (self.last_instrument == 'drums' or self.time_since_last_instrument > MIN_TIME_FOR_INSTRUMENT_CHANGE) and self.skeleton[JointId.HandLeft].frontbeat():
                     self.playbackSystem.play_sound('toms', 45, self.skeleton[JointId.HandLeft].beat.vel)
-                if self.skeleton[JointId.HandRight].rightbeat():
+                    self.last_instrument, self.time_since_last_instrument = 'drums', 0
+                if (self.last_instrument == 'drums' or self.time_since_last_instrument > MIN_TIME_FOR_INSTRUMENT_CHANGE) and self.skeleton[JointId.HandRight].rightbeat():
                     self.playbackSystem.play_sound('drums', 50, self.skeleton[JointId.HandRight].beat.vel)
-                if self.skeleton[JointId.HandLeft].leftbeat():
+                    self.last_instrument, self.time_since_last_instrument = 'drums', 0
+                if (self.last_instrument == 'drums' or self.time_since_last_instrument > MIN_TIME_FOR_INSTRUMENT_CHANGE) and self.skeleton[JointId.HandLeft].leftbeat():
                     self.playbackSystem.play_sound('drums', 40, self.skeleton[JointId.HandLeft].beat.vel)
+                    self.last_instrument, self.time_since_last_instrument = 'drums', 0
+
+
 
     def on_key_down(self, keycode, modifiers):
         print("Key pressed: "+str(keycode))

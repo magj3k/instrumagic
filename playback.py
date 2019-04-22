@@ -118,16 +118,16 @@ class PlaybackSystem(object):
         if instrument == "tick":
             if self.previous_note_metro != None:
                 for previous_note in self.previous_note_metro:
-                    self.metro_synth.noteoff(self.channel, previous_note)
+                    self.metro_synth.noteoff(self.channel, int(previous_note))
             self.metro_synth.program(self.channel, patch[0], patch[1])
-            self.metro_synth.noteon(self.channel, pitch, velocity)
+            self.metro_synth.noteon(self.channel, int(pitch), int(velocity))
             self.previous_note_metro = [pitch]
         else:
             if self.previous_note != None:
                 for previous_note in self.previous_note:
-                    self.performance_synth.noteoff(self.channel, previous_note)
+                    self.performance_synth.noteoff(self.channel, int(previous_note))
             self.performance_synth.program(self.channel, patch[0], patch[1])
-            self.performance_synth.noteon(self.channel, pitch, velocity)
+            self.performance_synth.noteon(self.channel, int(pitch), int(velocity))
             self.previous_note = [pitch]
 
     def play_chord(self, instrument = "piano", pitches = [], velocity = 80):
