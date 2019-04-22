@@ -62,8 +62,10 @@ class MainWidget1(BaseWidget) :
 
     def on_key_down(self, keycode, modifiers):
         print("Key pressed: "+str(keycode))
-        if keycode[0] != 27: # excluding escape key
+        if keycode[0] != 27 and keycode[0] != 32: # excluding escape key
             self.change_phase((self.phase+1) % 3)
+        elif keycode[0] == 32 and self.phase == 2:
+            self.playbackSystem.play_chord_performance("guitar")
 
     def change_phase(self, new_phase):
         if self.phase != new_phase:

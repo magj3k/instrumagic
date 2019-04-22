@@ -151,7 +151,12 @@ class PlaybackSystem(object):
     def play_chord_performance(self, instrument = "piano"):
         velocity = 95 # could be tweaked later
 
+        beat = self.tempo_processor.current_beat()
+        subbeat = self.tempo_processor.current_beat(0.25)
+
         current_chord = self.chord_progression[int(self.current_measure % len(self.chord_progression))]
+        if beat == len(self.chord_progression)-1 and subbeat == len(self.chord_progression)-1:
+            current_chord = self.chord_progression[int((self.current_measure+1) % len(self.chord_progression))]
         if current_chord != None:
             pitches = current_chord.get_pitches(True)
             self.play_chord(instrument, pitches, velocity)
