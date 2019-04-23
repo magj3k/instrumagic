@@ -2,6 +2,7 @@ from math import *
 import numpy as np
 import aubio
 from collections import Counter
+import sys
 
 A4 = 440
 C0 = A4*pow(2, -4.75)
@@ -35,13 +36,17 @@ class PitchTracker(object):
             common_pitches_and_frequencies = Counter(self.current_pitches).most_common(3)
             sorted_common_pitches_and_frequencies = sorted(common_pitches_and_frequencies)
 
+            print("Most common pitches: "+str(common_pitches_and_frequencies))
+            # print("All pitches: "+str(self.current_pitches))
+            sys.stdout.flush()
+
             # extracts base pitch first
             if len(common_pitches_and_frequencies) > 1:
                 base_note = sorted_common_pitches_and_frequencies[0]
 
-                if base_note[1] <= 7:
+                if base_note[1] <= 8:
                     base_note = sorted_common_pitches_and_frequencies[1]
-                if base_note[1] > 7:
+                if base_note[1] > 8:
 
                     # checks that base notes are relatively continuous in recorded pitches
                     base_sufficiently_continuous = False
@@ -58,7 +63,7 @@ class PitchTracker(object):
                                 base_count += 1
                         max_range = abs(min_pitch-max_pitch)
 
-                        if base_count >= 4 and max_range <= 2:
+                        if base_count >= 3 and max_range <= 2:
                             base_sufficiently_continuous = True
                             break
 
@@ -66,7 +71,7 @@ class PitchTracker(object):
                         # extracts supporting note
                         best_match = None
                         for pitch_and_freq in common_pitches_and_frequencies:
-                            if pitch_and_freq != base_note and pitch_and_freq[1] >= 6:
+                            if pitch_and_freq != base_note and pitch_and_freq[1] >= 5:
                                 if best_match == None or pitch_and_freq[1] > best_match[1] and (best_match[0] == base_note[0]+3 or best_match[0] == base_note[0]+4):
                                     best_match = pitch_and_freq
 
@@ -91,15 +96,16 @@ class PitchTracker(object):
                     self.all_frames.extend(sample[0])
 
                 avg_volume = np.mean(np.absolute(self.all_frames))
-                if avg_volume > 0.045: # tracks current pitch if volume is loud enough
+                if avg_volume > 0.01: #0.045: # tracks current pitch if volume is loud enough
 
                     aubio_samples = np.array(self.all_frames[-1024:], dtype=aubio.float_type)
                     if len(aubio_samples) >= 1024:
                         freq = self.pDetection(aubio_samples)[0]
                         pitch = freq_to_pitch(freq)
-                        self.current_pitches.append(pitch)
+                        if pitch > 12:
+                            self.current_pitches.append(pitch)
 
-                        # print("PITCH:" + str(pitch))
+                            # print("PITCH:" + str(pitch))
 
     def on_update(self, dt):
         self.t += dt

@@ -163,11 +163,11 @@ class MainWidget1(BaseWidget) :
                     self.playbackSystem.play_sound('drums', 38, self.skeleton[JointId.HandLeft].beat.vel)
                     self.last_instruments.append('drums')
                     self.time_since_last_instrument = 0
-                if self.skeleton[JointId.HandRight].rightbeat() and skeleton[JointId.HandRight].x - skeleton[JointId.HipCenter].x > 0.4:
+                if (self.skeleton[JointId.HandRight].rightbeat() or self.skeleton[JointId.HandRight].downbeat() or self.skeleton[JointId.HandRight].frontbeat()) and skeleton[JointId.HandRight].x - skeleton[JointId.HipCenter].x > 0.4:
                     self.playbackSystem.play_sound('drums', 49, self.skeleton[JointId.HandRight].beat.vel)
                     self.last_instruments.append('drums')
                     self.time_since_last_instrument = 0
-                if self.skeleton[JointId.HandLeft].leftbeat() and skeleton[JointId.HandLeft].x - skeleton[JointId.HipCenter].x < -0.4:
+                if (self.skeleton[JointId.HandLeft].leftbeat() or self.skeleton[JointId.HandLeft].downbeat() or self.skeleton[JointId.HandLeft].frontbeat()) and skeleton[JointId.HandLeft].x - skeleton[JointId.HipCenter].x < -0.4:
                     self.playbackSystem.play_sound('drums', 46, self.skeleton[JointId.HandLeft].beat.vel)
                     self.last_instruments.append('drums')
                     self.time_since_last_instrument = 0
@@ -176,7 +176,7 @@ class MainWidget1(BaseWidget) :
 
     def on_key_down(self, keycode, modifiers):
         print("Key pressed: "+str(keycode))
-        if keycode[0] != 27 and keycode[0] != 32 and keycode[1] != "c": # excluding escape key
+        if keycode[0] != 27 and keycode[0] != 32 and keycode[1] != "c" and keycode[1] != "x": # excluding escape key
             self.change_phase((self.phase+1) % 3)
         elif keycode[0] == 32 and self.phase == 2:
             self.playbackSystem.play_chord_performance("guitar")
