@@ -104,7 +104,6 @@ class MainWidget1(BaseWidget) :
                     self.skeleton[JointId.HandRight].ongoing_beat_vel is not None and self.skeleton[JointId.HandLeft].ongoing_beat_vel is not None and \
                     abs(skeleton[JointId.HandRight].y - skeleton[JointId.HandLeft].y) < 0.1 and \
                     (skeleton[JointId.HandRight].y+skeleton[JointId.HandLeft].y)/2 - skeleton[JointId.HipCenter].y < 0.05:
-                print('PPPPPPPPPPPPPPPPPPPPPPPPP')
                 self.playbackSystem.play_chord_performance('piano', (self.skeleton[JointId.HandRight].ongoing_beat_vel + self.skeleton[JointId.HandLeft].ongoing_beat_vel) / 2)
                 self.last_instruments.append('piano')
                 self.time_since_last_instrument = 0
@@ -113,7 +112,6 @@ class MainWidget1(BaseWidget) :
                     skeleton[JointId.HandLeft].y - skeleton[JointId.HandRight].y > 0.1 and \
                     abs(skeleton[JointId.HandRight].x - skeleton[JointId.HipCenter].x) < 0.2 and abs(skeleton[JointId.HandRight].y - skeleton[JointId.HipCenter].y) < 0.4:
                 if self.skeleton[JointId.HandRight].downbeat() or self.skeleton[JointId.HandRight].upbeat():
-                    print('-------------------------')
                     self.playbackSystem.play_chord_performance('guitar', self.skeleton[JointId.HandRight].beat.vel)
                     self.last_instruments.append('guitar')
                     self.time_since_last_instrument = 0
@@ -122,7 +120,6 @@ class MainWidget1(BaseWidget) :
                     skeleton[JointId.HandRight].y - skeleton[JointId.HandLeft].y > 0.1 and \
                     abs(skeleton[JointId.HandLeft].x - skeleton[JointId.HipCenter].x) < 0.2 and abs(skeleton[JointId.HandLeft].y - skeleton[JointId.HipCenter].y) < 0.4:
                 if self.skeleton[JointId.HandLeft].downbeat() or self.skeleton[JointId.HandLeft].upbeat():
-                    print('-------------------------')
                     self.playbackSystem.play_chord_performance('guitar', self.skeleton[JointId.HandLeft].beat.vel)
                     self.last_instruments.append('guitar')
                     self.time_since_last_instrument = 0
