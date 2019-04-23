@@ -23,6 +23,7 @@ class Chord(object):
         pitches = [self.base]
 
         # estimates current chord's base note when given estimate
+        not_inverted = True
         if base_estimate != None:
             base_estimate_octave = base_estimate // 12
             offset = base_estimate-(base_estimate_octave*12)
@@ -37,10 +38,17 @@ class Chord(object):
             closest_interval = min(min(min(interval_base, interval_third), interval_fifth), interval_octave)
 
             new_base = (base_estimate_octave*12)+base_offset
-            if closest_interval == interval_third and self.type == "major": new_base += 4
-            elif closest_interval == interval_third and self.type == "minor": new_base += 3
-            elif closest_interval == interval_fifth: new_base += 7
-            elif closest_interval == interval_octave: new_base += 12
+            if closest_interval == interval_third and self.type == "major":
+                new_base += 4
+                not_inverted = False
+            elif closest_interval == interval_third and self.type == "minor":
+                new_base += 3
+                not_inverted = False
+            elif closest_interval == interval_fifth:
+                new_base += 7
+                not_inverted = False
+            elif closest_interval == interval_octave:
+                new_base += 12
 
             pitches = [new_base]
         else:
