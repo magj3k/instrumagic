@@ -60,6 +60,7 @@ class Chord(object):
                     pitches[0] += -12
 
         # builds chord from base to reach top note estimate
+        if not_inverted == False: top_note_estimate = pitches[0] + 16
         if top_note_estimate != None and top_note_estimate > pitches[0] + 12:
             for i in range(pitches[0]+1, top_note_estimate+1):
                 octave = i // 12
@@ -82,7 +83,7 @@ class Chord(object):
             if len(pitches) >= 5 and not_inverted == True:
                 pitches = pitches[0]+pitches[2:]
 
-        else: # standard pitches construction
+        elif not_inverted == True: # standard pitches construction
             if self.type == "major":
                 pitches.append(pitches[0]+4)
                 pitches.append(pitches[0]+7)
