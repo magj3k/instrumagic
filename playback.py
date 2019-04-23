@@ -158,10 +158,6 @@ class PlaybackSystem(object):
             patch = (0, 2)
         elif instrument == "drums":
             patch = (128, 8)
-        elif instrument == "bass drums":
-            patch = (8, 116)
-        elif instrument == "toms":
-            patch = (8, 117)
 
         if instrument == "tick":
             if self.previous_note_metro != None:
@@ -222,5 +218,7 @@ def volume_for(instrument, vel):
     else:
         if instrument == 'guitar':
             return 70 #min(60 + int(10 * np.linalg.norm(vel)), 70)
+        elif instrument == 'drums':
+            return min(50 + int(40 * np.linalg.norm(vel)), 100)
         return min(30 + int(30 * np.linalg.norm(vel)), 80)
 
