@@ -67,7 +67,7 @@ class MainWidget1(BaseWidget) :
 
         self.objects = [self.phase_indicator, metro_anchor, self.metro_line, self.measure_1_indicator, self.measure_2_indicator, self.measure_3_indicator, self.measure_4_indicator]
 
-        self.kinect = Kinect(1, True)
+        self.kinect = Kinect(1)
         self.kinect.add_listener(self.on_kinect_update)
         self.skeleton = SkeletonModel()
 
