@@ -103,7 +103,7 @@ class MainWidget1(BaseWidget) :
                     (self.skeleton[JointId.HandRight].downbeat() or self.skeleton[JointId.HandLeft].downbeat()) and \
                     self.skeleton[JointId.HandRight].ongoing_beat_vel is not None and self.skeleton[JointId.HandLeft].ongoing_beat_vel is not None and \
                     abs(skeleton[JointId.HandRight].y - skeleton[JointId.HandLeft].y) < 0.1 and \
-                    (skeleton[JointId.HandRight].y+skeleton[JointId.HandLeft].y)/2 - skeleton[JointId.HipCenter].y < 0.05:
+                    (skeleton[JointId.HandRight].y+skeleton[JointId.HandLeft].y)/2 - skeleton[JointId.HipCenter].y < 0.15:
                 self.playbackSystem.play_chord_performance('piano', (self.skeleton[JointId.HandRight].ongoing_beat_vel + self.skeleton[JointId.HandLeft].ongoing_beat_vel) / 2)
                 self.last_instruments.append('piano')
                 self.time_since_last_instrument = 0
