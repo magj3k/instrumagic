@@ -22,6 +22,11 @@ from pykinect.nui import JointId
 MIN_TIME_FOR_INSTRUMENT_CHANGE = 15
 SHORTER_MIN_TIME_FOR_INSTRUMENT_CHANGE = 10
 
+def convert_to_range(value, old_min, old_max, new_min, new_max):
+    old_avg, new_avg = (old_max+old_min)/2, (new_max+new_min)/2
+    old_range, new_range = (old_max-old_min)/2, (new_max-new_min)/2
+    return int(min(max(new_avg + (value-old_avg) * (new_range/old_range), new_min), new_max))
+
 class MainWidget1(BaseWidget) :
     def __init__(self):
         super(MainWidget1, self).__init__()
@@ -67,7 +72,7 @@ class MainWidget1(BaseWidget) :
 
         self.objects = [self.phase_indicator, metro_anchor, self.metro_line, self.measure_1_indicator, self.measure_2_indicator, self.measure_3_indicator, self.measure_4_indicator]
 
-        self.kinect = Kinect(1)
+        self.kinect = Kinect(1, True)
         self.kinect.add_listener(self.on_kinect_update)
         self.skeleton = SkeletonModel()
 
@@ -104,7 +109,8 @@ class MainWidget1(BaseWidget) :
                     self.skeleton[JointId.HandRight].ongoing_beat_vel is not None and self.skeleton[JointId.HandLeft].ongoing_beat_vel is not None and \
                     abs(skeleton[JointId.HandRight].y - skeleton[JointId.HandLeft].y) < 0.1 and \
                     (skeleton[JointId.HandRight].y+skeleton[JointId.HandLeft].y)/2 - skeleton[JointId.HipCenter].y < 0.05:
-                self.playbackSystem.play_chord_performance('piano', (self.skeleton[JointId.HandRight].ongoing_beat_vel + self.skeleton[JointId.HandLeft].ongoing_beat_vel) / 2)
+                self.playbackSystem.play_chord_performance('piano', (self.skeleton[JointId.HandRight].ongoing_beat_vel + self.skeleton[JointId.HandLeft].ongoing_beat_vel) / 2,
+                    53) #convert_to_range(skeleton[JointId.HandLeft].x, -0.4, 0.4, 14+36, 101-24), convert_to_range(skeleton[JointId.HandRight].x, -0.4, 0.4, 14+36, 101-24))
                 self.last_instruments.append('piano')
                 self.time_since_last_instrument = 0
             elif ('guitar' in self.last_instruments or self.time_since_last_instrument > SHORTER_MIN_TIME_FOR_INSTRUMENT_CHANGE) and \
@@ -112,7 +118,12 @@ class MainWidget1(BaseWidget) :
                     skeleton[JointId.HandLeft].y - skeleton[JointId.HandRight].y > 0.1 and \
                     abs(skeleton[JointId.HandRight].x - skeleton[JointId.HipCenter].x) < 0.2 and abs(skeleton[JointId.HandRight].y - skeleton[JointId.HipCenter].y) < 0.4:
                 if self.skeleton[JointId.HandRight].downbeat() or self.skeleton[JointId.HandRight].upbeat():
-                    self.playbackSystem.play_chord_performance('guitar', self.skeleton[JointId.HandRight].beat.vel)
+                    hip_center = skeleton[JointId.HipCenter]
+                    string_distance = np.linalg.norm(self.skeleton[JointId.HandLeft].pos - (hip_center.x, hip_center.y, hip_center.z))
+                    print(string_distance)
+                    sys.stdout.flush()
+                    self.playbackSystem.play_chord_performance('guitar', self.skeleton[JointId.HandRight].beat.vel,
+                        convert_to_range(string_distance, 0.7, 0.3, 41, 65), can_invert=True)
                     self.last_instruments.append('guitar')
                     self.time_since_last_instrument = 0
             elif ('guitar' in self.last_instruments or self.time_since_last_instrument > SHORTER_MIN_TIME_FOR_INSTRUMENT_CHANGE) and \
@@ -125,12 +136,13 @@ class MainWidget1(BaseWidget) :
                     self.time_since_last_instrument = 0
             else:
                 if self.skeleton[JointId.HandRight].downbeat() and abs(skeleton[JointId.HandRight].x - skeleton[JointId.HipCenter].x) < 0.4:
-                    if (self.last_instruments[-1] == 'drums' or self.time_since_last_instrument > MIN_TIME_FOR_INSTRUMENT_CHANGE):
+                    if self.last_instruments[-1] == 'drums' or self.time_since_last_instrument > MIN_TIME_FOR_INSTRUMENT_CHANGE:
                         self.playbackSystem.play_sound('bass drums', 35, self.skeleton[JointId.HandRight].beat.vel)
                         self.last_instruments.append('drums')
                         self.time_since_last_instrument = 0
                     elif self.last_instruments[-1] == 'piano':
-                        self.playbackSystem.play_chord_performance('piano', self.skeleton[JointId.HandRight].beat.vel)
+                        self.playbackSystem.play_chord_performance('piano', self.skeleton[JointId.HandRight].beat.vel,
+                            53) #convert_to_range(skeleton[JointId.HandRight].x, -0.4, 0.4, 14+36, 101-24))
                         self.last_instruments.append('piano')
                         self.time_since_last_instrument = 0
                     elif self.last_instruments[-1] == 'guitar':
@@ -138,12 +150,13 @@ class MainWidget1(BaseWidget) :
                         self.last_instruments.append('guitar')
                         self.time_since_last_instrument = 0
                 if self.skeleton[JointId.HandLeft].downbeat() and abs(skeleton[JointId.HandLeft].x - skeleton[JointId.HipCenter].x) < 0.4:
-                    if (self.last_instruments[-1] == 'drums' or self.time_since_last_instrument > MIN_TIME_FOR_INSTRUMENT_CHANGE):
+                    if self.last_instruments[-1] == 'drums' or self.time_since_last_instrument > MIN_TIME_FOR_INSTRUMENT_CHANGE:
                         self.playbackSystem.play_sound('bass drums', 30, self.skeleton[JointId.HandLeft].beat.vel)
                         self.last_instruments.append('drums')
                         self.time_since_last_instrument = 0
                     elif self.last_instruments[-1] == 'piano':
-                        self.playbackSystem.play_chord_performance('piano', self.skeleton[JointId.HandLeft].beat.vel)
+                        self.playbackSystem.play_chord_performance('piano', self.skeleton[JointId.HandLeft].beat.vel,
+                            53) #convert_to_range(skeleton[JointId.HandLeft].x, -0.4, 0.4, 14+36, 101-24))
                         self.last_instruments.append('piano')
                         self.time_since_last_instrument = 0
                     elif self.last_instruments[-1] == 'guitar':
@@ -160,11 +173,11 @@ class MainWidget1(BaseWidget) :
                     self.playbackSystem.play_sound('drums', 38, self.skeleton[JointId.HandLeft].beat.vel)
                     self.last_instruments.append('drums')
                     self.time_since_last_instrument = 0
-                if (self.skeleton[JointId.HandRight].rightbeat() or self.skeleton[JointId.HandRight].downbeat() or self.skeleton[JointId.HandRight].frontbeat()) and skeleton[JointId.HandRight].x - skeleton[JointId.HipCenter].x > 0.4:
+                if (self.skeleton[JointId.HandRight].rightbeat() or self.skeleton[JointId.HandRight].frontbeat() or self.skeleton[JointId.HandRight].downbeat() and skeleton[JointId.HandLeft].x < 0) and skeleton[JointId.HandRight].x - skeleton[JointId.HipCenter].x > 0.4:
                     self.playbackSystem.play_sound('drums', 49, self.skeleton[JointId.HandRight].beat.vel)
                     self.last_instruments.append('drums')
                     self.time_since_last_instrument = 0
-                if (self.skeleton[JointId.HandLeft].leftbeat() or self.skeleton[JointId.HandLeft].downbeat() or self.skeleton[JointId.HandLeft].frontbeat()) and skeleton[JointId.HandLeft].x - skeleton[JointId.HipCenter].x < -0.4:
+                if (self.skeleton[JointId.HandLeft].leftbeat() or self.skeleton[JointId.HandLeft].frontbeat() or self.skeleton[JointId.HandLeft].downbeat() and skeleton[JointId.HandRight].x > 0) and skeleton[JointId.HandLeft].x - skeleton[JointId.HipCenter].x < -0.4:
                     self.playbackSystem.play_sound('drums', 46, self.skeleton[JointId.HandLeft].beat.vel)
                     self.last_instruments.append('drums')
                     self.time_since_last_instrument = 0

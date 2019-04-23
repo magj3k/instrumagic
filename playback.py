@@ -1,5 +1,6 @@
 from math import *
 import numpy as np
+import sys
 
 from common.core import *
 from common.audio import *
@@ -19,12 +20,13 @@ class Chord(object):
         if pitches[1] == pitches[0]+3:
             self.type = "minor"
             
-    def get_pitches(self, for_feedback, base_estimate = None, top_note_estimate = None):
+    def get_pitches(self, for_feedback, base_estimate = None, top_note_estimate = None, can_invert = False):
         pitches = [self.base]
 
         # estimates current chord's base note when given estimate
         not_inverted = True
         if base_estimate != None:
+            '''
             base_estimate_octave = base_estimate // 12
             offset = base_estimate-(base_estimate_octave*12)
             base_octave = self.base // 12
@@ -35,7 +37,7 @@ class Chord(object):
             if self.type == "major": interval_third = abs(offset - (base_offset + 4))
             interval_fifth = abs(offset - (base_offset + 7))
             interval_octave = abs(offset - (base_offset + 12))
-            closest_interval = min(min(min(interval_base, interval_third), interval_fifth), interval_octave)
+            closest_interval = min(min(min(interval_base, interval_third), interval_fifth), interval_octave) if can_invert else interval_base
 
             new_base = (base_estimate_octave*12)+base_offset
             if closest_interval == interval_third and self.type == "major":
@@ -49,6 +51,26 @@ class Chord(object):
                 not_inverted = False
             elif closest_interval == interval_octave:
                 new_base += 12
+            '''
+            new_base = self.base
+            while new_base > base_estimate:
+                new_base -= 12
+            while True:
+                if base_estimate == new_base:
+                    break
+                elif base_estimate <= new_base + 4 and self.type == 'major':
+                    new_base += 4
+                    not_inverted = False
+                    break
+                elif base_estimate <= new_base + 3 and self.type == 'minor':
+                    new_base += 3
+                    not_inverted = False
+                    break
+                elif base_estimate <= new_base + 7:
+                    new_base += 7
+                    not_inverted = False
+                    break
+                new_base += 12
 
             pitches = [new_base]
         else:
@@ -60,13 +82,13 @@ class Chord(object):
                     pitches[0] += -12
 
         # builds chord from base to reach top note estimate
-        if not_inverted == False: top_note_estimate = pitches[0] + 16
+        if not_inverted == False: top_note_estimate = int(pitches[0]) + 16
         if top_note_estimate != None and top_note_estimate > pitches[0] + 12:
-            for i in range(pitches[0]+1, top_note_estimate+1):
+            for i in range(int(pitches[0])+1, top_note_estimate+1):
                 octave = i // 12
                 offset = i-(octave*12)
-                base_octave = pitches[0] // 12
-                base_offset = pitches[0]-(base_octave*12)
+                base_octave = self.base // 12
+                base_offset = self.base-(base_octave*12)
 
                 interval = offset - base_offset
                 if interval < 0: interval += 12
@@ -81,7 +103,7 @@ class Chord(object):
 
             # cuts out third on bottom chord if enough pitches are generated
             if len(pitches) >= 5 and not_inverted == True:
-                pitches = pitches[0]+pitches[2:]
+                pitches = pitches[:1]+pitches[2:]
 
         elif not_inverted == True: # standard pitches construction
             if self.type == "major":
@@ -90,7 +112,9 @@ class Chord(object):
             elif self.type == "minor":
                 pitches.append(pitches[0]+3)
                 pitches.append(pitches[0]+7)
-
+            if not for_feedback:
+                pitches.append(pitches[0]+12)
+        
         return pitches
 
 class PlaybackSystem(object):
@@ -210,7 +234,7 @@ class PlaybackSystem(object):
         self.previous_note = pitches
 
     # call this for all non-metronome sounds
-    def play_chord_performance(self, instrument = "piano", velocity = 95):
+    def play_chord_performance(self, instrument = "piano", velocity = 95, base_estimate = None, top_note_estimate = None, can_invert = False):
         velocity = volume_for(instrument, velocity)
 
         beat = self.tempo_processor.current_beat()
@@ -220,7 +244,7 @@ class PlaybackSystem(object):
         if beat == len(self.chord_progression)-1 and subbeat == len(self.chord_progression)-1:
             current_chord = self.chord_progression[int((self.current_measure+1) % len(self.chord_progression))]
         if current_chord != None:
-            pitches = current_chord.get_pitches(False)
+            pitches = current_chord.get_pitches(False, base_estimate, top_note_estimate, can_invert)
             self.play_chord(instrument, pitches, velocity)
 
 def volume_for(instrument, vel):
