@@ -19,15 +19,28 @@ class Chord(object):
         if pitches[1] == pitches[0]+3:
             self.type = "minor"
             
-    def get_pitches(self, for_feedback, inversion = 0, base_estimate = None, top_note_estimate = None):
+    def get_pitches(self, for_feedback, base_estimate = None, top_note_estimate = None):
         pitches = [self.base]
 
         # estimates current chord's base note when given estimate
         if base_estimate != None:
             base_estimate_octave = base_estimate // 12
+            offset = base_estimate-(base_estimate_octave*12)
             base_octave = self.base // 12
             base_offset = (self.base-(base_octave*12))
+
+            interval_base = abs(offset - base_offset)
+            interval_third = abs(offset - (base_offset + 3))
+            if self.type == "major": interval_third = abs(offset - (base_offset + 4))
+            interval_fifth = abs(offset - (base_offset + 7))
+            interval_octave = abs(offset - (base_offset + 12))
+            closest_interval = min(min(min(interval_base, interval_third), interval_fifth), interval_octave)
+
             new_base = (base_estimate_octave*12)+base_offset
+            if closest_interval == interval_third and self.type == "major": new_base += 4
+            elif closest_interval == interval_third and self.type == "minor": new_base += 3
+            elif closest_interval == interval_fifth: new_base += 7
+            elif closest_interval == interval_octave: new_base += 12
 
             pitches = [new_base]
         else:
@@ -57,8 +70,10 @@ class Chord(object):
                 elif interval == 7:
                     pitches.append(i)
 
-            if len(pitches) >= 4: # cuts out third on bottom chord if enough pitches are generated
+            # cuts out third on bottom chord if enough pitches are generated
+            if len(pitches) >= 5 and not_inverted == True:
                 pitches = pitches[0]+pitches[2:]
+
         else: # standard pitches construction
             if self.type == "major":
                 pitches.append(pitches[0]+4)
@@ -66,13 +81,6 @@ class Chord(object):
             elif self.type == "minor":
                 pitches.append(pitches[0]+3)
                 pitches.append(pitches[0]+7)
-
-        # inversions
-        if len(pitches) == 3:
-            if inversion % 3 == 1:
-                pitches = [pitches[1], pitches[2], pitches[0]+12]
-            elif inversion % 3 == 2:
-                pitches = [pitches[2], pitches[0]+12, pitches[1]+12]
 
         return pitches
 
