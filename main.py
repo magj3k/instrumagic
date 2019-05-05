@@ -77,6 +77,16 @@ class MainWidget1(BaseWidget) :
 
         self.kinect.start()
 
+        # initial logo
+        logo_size = (Window.width*0.6, Window.width*0.6*294/782)
+        self.logo_bg = Obj(Rectangle(pos=(0, 0), size=(Window.width, Window.height)), (0.0, 0.0, 0.0))
+        self.canvas.add(self.logo_bg)
+        self.logo = Obj(Rectangle(pos=((Window.width*0.5)-(logo_size[0]*0.5), (Window.height*0.53)-(logo_size[1]*0.5)), size=logo_size), (1.0, 1.0, 1.0), "graphics/logo_white.png")
+        self.canvas.add(self.logo)
+        self.objects.append(self.logo_bg)
+        self.objects.append(self.logo)
+        self.intro_timer = 0
+
     def on_kinect_update(self, skeleton):
         self.skeleton.update(skeleton)
         if skeleton is None:
@@ -183,7 +193,7 @@ class MainWidget1(BaseWidget) :
             self.playbackSystem.chord_progression = [None, None, None, None]
 
     def change_phase(self, new_phase):
-        if self.phase != new_phase:
+        if self.phase != new_phase and self.intro_timer > 8.0:
             self.phase = new_phase
             self.phase_ind_anim_x = 0
 
@@ -202,6 +212,12 @@ class MainWidget1(BaseWidget) :
 
     def on_update(self) :
         dt = kivyClock.frametime
+        self.intro_timer += dt
+
+        if self.intro_timer > 4.5:
+            self.logo.color.a = max(0, self.logo.color.a-(dt*0.7))
+            self.logo_bg.color.a = max(0, self.logo.color.a-(dt*0.7))
+
         self.phase_ind_anim_x = min(self.phase_ind_anim_x+dt, 100)
 
         self.pitchTracker.on_update(dt)
