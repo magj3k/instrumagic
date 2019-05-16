@@ -26,4 +26,6 @@ Before running InstruMagic, make sure you have installed the following Python pa
 - PyGame
 - PyFluidSynth
 
+Also, make sure to download the MIDI soundfont file (named FluidR3_GM.sf2) from https://www.dropbox.com/s/5urjooxtapuo7mz/FluidR3_GM.sf2?dl=0 and put it in the sfx/ directory of the InstruMagic project.
+
 After these packages have been installed and you computer has been connected to an XBox Kinect, launch InstruMagic by running 'main.py' with Python 2.x.
