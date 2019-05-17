@@ -4,7 +4,7 @@
 
 InstruMagic is a musical improvisation interface that allows experienced and aspiring musicians alike to experiment with music in an intuitive and tangible way. Simply stand in front of the Kinect, conduct a tempo, sing a chord progression, and finally, go crazy! Piano, guitar, and drum set not included.
 
-Learn more about InstruMagic here: https://www.youtube.com/watch?v=b3TeQufmkDg
+See InstruMagic in action here: https://www.youtube.com/watch?v=b3TeQufmkDg
 
 Read more about our process here: https://docs.google.com/document/d/1PM2lt1YP-Bp9QAlkMpTJrxJeTNwm8qZh99uFIJx2-Fs/edit?usp=sharing
 
