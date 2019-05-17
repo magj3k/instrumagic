@@ -3,14 +3,14 @@
 ## File Guide
 
 - common/ - folder containing audio, graphics, and timekeeping framework from 6.809
-- gesture_recognizer.py - script that interprets kinect data and outputs classified gestures
-- kinect.py - XBox Kinect interfacing script
-- main.py - main program controller, manages all program components
+- kinect.py - XBox Kinect interfacing script, beat recognition logic
+- main.py - main program controller, manages all program components, also contains gesture recognition logic for Kinect input
 - pitch_tracker.py - script that interprets audio frames and outputs pitches/chords
 - playback.py - script that manages audio playback, the metronome audio
 - sfx/ - folder containing sound effect files
 - tempo_processor.py - script that recognizes timestamped beats from the gesture controller and modifies the system's tempo accordingly
 - ui.py - script that contains components for displaying user interface elements
+- gesture_recognizer.py - outdated script that outputs classified gestures from Leap data
 
 ## Running & Setup
 
