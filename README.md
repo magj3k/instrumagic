@@ -1,4 +1,6 @@
-# InstruMagic - 6.835 Final Project
+# InstruMagic
+
+6.835 Final Project 2019. Chris Chang, Fernando Herrera, Magnus Johnson.
 
 ## Overview
 
