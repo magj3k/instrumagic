@@ -1,6 +1,6 @@
 # InstruMagic
 
-6.835 Final Project 2019. Chris Chang, Fernando Herrera, Magnus Johnson.
+6.835 Intelligent Multimodal User Interfaces Final Project, Spring 2019 MIT. Chris Chang, Fernando Herrera, Magnus Johnson.
 
 ## Overview
 
